@@ -1,0 +1,52 @@
+# =====================================================================
+# StoneSpawn messages (English)
+#
+# Supported color formats, usable at the same time in any message:
+#   &-codes        e.g. &a, &b, &l
+#   Hex colors     e.g. &#FF00AA
+#   MiniMessage    e.g. <gradient:#ff0000:#0000ff>text</gradient>
+#
+# Placeholders available per message are noted in comments.
+#
+# Note: the teleport countdown and "arrived at spawn" message text live in
+# config.yml (teleport.countdown.* / teleport.arrival.*) instead of here,
+# since where/how they're displayed is also configured there.
+# =====================================================================
+
+prefix: "&l&8[&7Stone&b&lSpawn&8]&r "
+
+general:
+  no-permission: "&c✖ You don't have permission to do this."
+  player-only: "&c✖ Only players can use this command."
+  # {player}
+  player-not-found: "&c✖ Player &f{player} &cnot found."
+  reload-success: "&a✔ Configuration and messages have been reloaded."
+  world-blocked: "&c✖ This feature is disabled in this world."
+
+setspawn:
+  success: "&a✔ The spawn point has been set to your current location."
+
+spawn:
+  no-spawn-set: "&c✖ No spawn point has been set yet."
+  # {seconds}
+  cooldown: "&c⏱ Please wait &b{seconds}s &cbefore using this again."
+  cancelled-move: "&c✖ Teleport cancelled because you moved."
+  # {player}
+  teleported-other: "&a✔ You teleported &b{player} &ato spawn."
+  # {player}
+  teleported-by: "&a✔ You have been teleported to spawn by &b{player}&a."
+
+help:
+  header: "<gradient:#9AA5B1:#55C6FF><bold>▬▬▬▬▬ StoneSpawn Help ▬▬▬▬▬</bold></gradient>"
+  setspawn: "&b/setspawn &8» &7Set the spawn point to your current location"
+  spawn: "&b/spawn [player] &8» &7Teleport to spawn, or teleport another player"
+  reload: "&b/stonespawn reload &8» &7Reload the configuration and messages"
+  checkupdate: "&b/stonespawn checkupdate &8» &7Check Modrinth for a new version right now"
+  help: "&b/stonespawn help &8» &7Show this help menu"
+
+update:
+  # {version} {current} {behind}
+  available: "&l&8[&7Stone&b&lSpawn&8]&r &fA new version is available: &a{version} &7(you're on &c{current}&7, &e{behind} &7behind). Check Modrinth to update."
+  versions-behind: "{count} version(s)"
+  versions-behind-unknown: "an unknown number of versions"
+  check-triggered: "&b⟳ &7Checking Modrinth for updates now... &8watch the console for the result."

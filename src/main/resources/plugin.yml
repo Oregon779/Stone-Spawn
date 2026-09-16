@@ -1,0 +1,45 @@
+name: StoneSpawn
+version: '1.0.0'
+main: dev.stonespawn.plugin.StoneSpawn
+api-version: '1.21'
+author: Stone Plugins
+description: Adds a configurable server spawn point with teleport countdown, particle and sound effects, and fully translatable messages.
+folia-supported: false
+
+commands:
+  setspawn:
+    description: Set the server spawn point to your current location.
+    usage: /setspawn
+
+  spawn:
+    description: Teleport to the server spawn point, or teleport another player there.
+    usage: /spawn [player]
+
+  stonespawn:
+    description: Main StoneSpawn command for reloading the plugin and viewing help.
+    usage: /stonespawn <reload|help|checkupdate>
+    aliases: [sp, ss]
+
+permissions:
+  stonespawn.admin:
+    description: Access to all StoneSpawn admin actions (setspawn, teleporting others, reload, checkupdate, update notifications).
+    default: op
+
+  stonespawn.use:
+    description: Allows teleporting yourself to the spawn point with /spawn.
+    default: true
+
+  stonespawn.bypass:
+    description: Bypasses both the /spawn cooldown and the teleport delay.
+    default: op
+    children:
+      stonespawn.bypass.cooldown: true
+      stonespawn.bypass.delay: true
+
+  stonespawn.bypass.cooldown:
+    description: Allows bypassing the /spawn command cooldown.
+    default: op
+
+  stonespawn.bypass.delay:
+    description: Allows bypassing the teleport delay and countdown.
+    default: op

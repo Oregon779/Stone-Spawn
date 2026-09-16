@@ -1,0 +1,190 @@
+# =====================================================================
+#                          StoneSpawn - config.yml
+#                        A plugin by Stone Plugins
+# =====================================================================
+#
+# This file contains SETTINGS (switches, times, colors, sounds) as well
+# as the text for the teleport countdown and arrival message below -
+# those two live here (not in messages.yml) so the whole "what does
+# teleporting to spawn look/sound like" experience is configured in one
+# single place.
+#
+# Text for every channel (chat/actionbar/bossbar/title/subtitle) stays
+# filled in under "messages" at the same time - the "notification" field
+# just picks which ONE of them is actually shown, so you can freely
+# switch your mind later without having to write the text again.
+#
+# General command feedback (help, errors, cooldown, ...) is translated
+# per-language instead, in:
+#   plugins/StoneSpawn/languages/<language>/messages.yml
+#
+# Missing options are added automatically on plugin updates. Existing
+# values you changed are never overwritten, even in nested sections.
+# =====================================================================
+
+# Language used for general command feedback. Must match a folder under
+# languages/ - "en" and "de" ship by default. New players joining for the
+# first time always see English messages until an admin changes this.
+language: en
+
+spawn:
+  # Teleport players to spawn when they join the server.
+  # ALWAYS      -> every single join
+  # FIRST_JOIN  -> only the very first time a player joins
+  # NEVER       -> disabled
+  join:
+    mode: FIRST_JOIN
+
+  # Teleport players to spawn when they respawn after death.
+  death:
+    enabled: false
+    # If true, a bed spawn point set by the player overrides spawn teleportation.
+    ignore-bed-spawn: true
+    # If true, a respawn anchor spawn point overrides spawn teleportation.
+    ignore-respawn-anchor: true
+
+  # Teleport players to spawn when they fall into the void.
+  void:
+    enabled: false
+    # Y level below which a player counts as "in the void".
+    height: -64
+
+  # Teleport players to spawn whenever they change worlds.
+  world-change:
+    enabled: false
+
+  # An ambient particle ring sitting permanently at the spawn location
+  # itself, visible to everyone nearby - not tied to any player teleporting.
+  # Broadcasts to everyone in range (unlike the personal countdown/arrival
+  # effects below, which only render for the teleporting player).
+  marker:
+    enabled: true
+    particle: PORTAL
+    radius: 1.5
+    points: 24
+    rotation-speed-degrees: 6.0
+    height-offset: 0.1
+    # How often the ring refreshes, in ticks. Lower = smoother but more particles.
+    interval-ticks: 4
+    particle-count-per-point: 1
+
+# Settings, text and effects for every teleport performed by this plugin
+# (manual /spawn command as well as automatic join/death/void/world-change
+# teleports - though only the manual command actually runs a countdown).
+teleport:
+  # Delay in seconds before a manual /spawn teleport happens. 0 = instant.
+  delay-seconds: 3
+  # Cancel a pending teleport if the player moves (rotating the camera is ignored).
+  cancel-on-move: true
+  # Apply a blindness effect while the countdown is running.
+  blindness-during-delay: false
+  # Temporarily disable fall damage right after any spawn teleport.
+  disable-fall-damage: true
+
+  # ---------- COUNTDOWN (shown while waiting to teleport) ----------
+  countdown:
+    # Where the countdown message is shown. CHAT, ACTIONBAR, BOSSBAR or TITLE.
+    notification: ACTIONBAR
+
+    # Text for every channel - only the one picked above is actually used.
+    # {seconds} = time left. TITLE uses "title" + "subtitle" together.
+    messages:
+      chat: "&b➜ &eTeleporting to spawn in &b{seconds}&e..."
+      actionbar: "&b➜ &eTeleporting to spawn in &b{seconds}&e..."
+      bossbar: "&eTeleporting to spawn in &b{seconds}&e..."
+      title: "&b&l➜ SPAWN ➜"
+      subtitle: "&7Teleporting in &b{seconds}s&7..."
+
+    # A single colored double-helix spiral around the player - kept simple
+    # on purpose, no combined multi-layer effects. Color is fully custom
+    # (DUST particle), so you can pick any RGB you like instead of being
+    # stuck with a fixed particle color.
+    spiral:
+      enabled: true
+      color:
+        red: 120
+        green: 190
+        blue: 255
+      size: 1.2
+      radius: 0.6
+      height: 1.8
+      rotation-speed-degrees: 20.0
+      particle-count-per-point: 2
+
+    # A soft "tick" sound plays once per second. The pitch rises as the
+    # countdown gets closer to zero, building toward the teleport.
+    sound: BLOCK_NOTE_BLOCK_BELL
+    sound-volume: 0.5
+    sound-pitch-start: 0.7
+    sound-pitch-end: 1.6
+
+  # ---------- ARRIVAL (shown once the player lands at spawn) ----------
+  arrival:
+    # Master switches - apply to /spawn and every automatic teleport alike.
+    message-enabled: true
+    effects-enabled: true
+
+    # Where the arrival message is shown. CHAT, ACTIONBAR, BOSSBAR or TITLE.
+    notification: TITLE
+
+    # Text for every channel - only the one picked above is actually used.
+    # TITLE uses "title" + "subtitle" together.
+    messages:
+      chat: "&a✔ &7You have arrived at &b&lspawn&7!"
+      actionbar: "&a✔ &7You have arrived at &b&lspawn&7!"
+      bossbar: "&a✔ You have arrived at spawn!"
+      title: "&a&l✔ SPAWN"
+      subtitle: "&7Welcome back!"
+
+    # Particles start scattered around the player on a sphere and gather
+    # inward toward them - a settling/gathering motion, deliberately
+    # different from the countdown's rotating spiral.
+    converge:
+      enabled: true
+      color:
+        red: 255
+        green: 240
+        blue: 215
+      size: 0.9
+      radius: 1.8
+      height-center: 1.0
+      particles: 36
+      duration-ticks: 20
+
+    sound: ENTITY_ENDERMAN_TELEPORT
+    sound-volume: 0.5
+    sound-pitch: 1.1
+
+  # Shared BossBar look, used whenever "notification" above is BOSSBAR.
+  bossbar:
+    color: PURPLE
+    # PROGRESS, NOTCHED_6, NOTCHED_10, NOTCHED_12 or NOTCHED_20
+    style: PROGRESS
+    duration-seconds: 5
+
+  # Shared Title timing, used whenever "notification" above is TITLE.
+  title:
+    fade-in-ticks: 5
+    stay-ticks: 30
+    fade-out-ticks: 5
+
+# Settings for the manual /spawn command.
+command:
+  # Cooldown in seconds between uses of /spawn.
+  cooldown-seconds: 10
+
+# Restrict in which worlds the plugin is active.
+worlds:
+  # NONE       -> no restriction, plugin works everywhere
+  # WHITELIST  -> plugin only works in the listed worlds
+  # BLACKLIST  -> plugin works everywhere except the listed worlds
+  mode: NONE
+  list: []
+
+# Checks https://modrinth.com/project/stone-spawn for a newer plugin version.
+# Console feedback is always printed once right on startup. If a newer
+# version is found, everyone with stonespawn.admin (or OP) is reminded
+# every time they join, until the plugin is updated.
+update-checker:
+  enabled: true
+  check-interval-minutes: 60
