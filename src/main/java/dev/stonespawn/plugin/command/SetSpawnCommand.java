@@ -1,6 +1,7 @@
 package dev.stonespawn.plugin.command;
 
 import dev.stonespawn.plugin.StoneSpawn;
+import dev.stonespawn.plugin.manager.MessageManager;
 import dev.stonespawn.plugin.manager.SpawnManager;
 import org.bukkit.Location;
 import org.bukkit.command.Command;
@@ -42,7 +43,7 @@ public class SetSpawnCommand implements CommandExecutor, TabCompleter {
         }
 
         if (!SpawnManager.isValidName(args[0])) {
-            plugin.getMessageManager().sendChat(player, "setspawn.invalid-name", Map.of("spawn", args[0]));
+            plugin.getMessageManager().sendChat(player, "setspawn.invalid-name", Map.of("spawn", MessageManager.sanitizeInput(args[0])));
             return true;
         }
 

@@ -12,6 +12,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 public class MessageManager {
@@ -46,7 +47,15 @@ public class MessageManager {
     private final StoneSpawn plugin;
     private final MiniMessage miniMessage = MiniMessage.miniMessage();
     private final Map<String, YamlConfiguration> languageCache = new HashMap<>();
-    private final Map<String, Component> staticFormatCache = new HashMap<>();
+    private static final int FORMAT_CACHE_SIZE = 512;
+
+    // Bounded LRU: countdown texts repeat every second for every player, but names in messages vary without limit.
+    private final Map<String, Component> formatCache = new LinkedHashMap<>(64, 0.75f, true) {
+        @Override
+        protected boolean removeEldestEntry(Map.Entry<String, Component> eldest) {
+            return size() > FORMAT_CACHE_SIZE;
+        }
+    };
 
     private static final String[] BUNDLED_LANGUAGES = {"en", "de"};
 
@@ -58,7 +67,7 @@ public class MessageManager {
 
     public void load() {
         languageCache.clear();
-        staticFormatCache.clear();
+        formatCache.clear();
         activeLanguage = plugin.getConfigManager().getLanguage();
 
         for (String lang : BUNDLED_LANGUAGES) {
@@ -171,13 +180,14 @@ public class MessageManager {
     }
 
     public Component format(String raw, Map<String, String> placeholders) {
-        if (placeholders == null || placeholders.isEmpty()) {
-            return staticFormatCache.computeIfAbsent(raw,
-                    r -> miniMessage.deserialize(convertLegacyToMiniMessage(r)));
-        }
-        String withPlaceholders = applyPlaceholders(raw, placeholders);
-        String miniMessageReady = convertLegacyToMiniMessage(withPlaceholders);
-        return miniMessage.deserialize(miniMessageReady);
+        String text = applyPlaceholders(raw, placeholders);
+        return formatCache.computeIfAbsent(text, t -> miniMessage.deserialize(convertLegacyToMiniMessage(t)));
+    }
+
+    /** Makes command input safe to echo back: no color codes or MiniMessage tags, and a bounded length. */
+    public static String sanitizeInput(String input) {
+        String cleaned = input.replaceAll("[^A-Za-z0-9_.\\-]", "?");
+        return cleaned.length() > 32 ? cleaned.substring(0, 32) + "..." : cleaned;
     }
 
     public String getFormattedRaw(String path, Map<String, String> placeholders) {

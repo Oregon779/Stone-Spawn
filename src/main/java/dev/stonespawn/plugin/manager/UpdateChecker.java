@@ -59,6 +59,11 @@ public class UpdateChecker implements Listener {
         }
     }
 
+    public void shutdown() {
+        stop();
+        httpClient.shutdownNow();
+    }
+
     private void check() {
         try {
             HttpRequest request = HttpRequest.newBuilder()
@@ -88,7 +93,9 @@ public class UpdateChecker implements Listener {
                 latestKnownVersion = newest;
                 versionsBehind = countVersionsBehind(versions, current);
                 logToConsole(newest, current);
-                Bukkit.getScheduler().runTask(plugin, () -> notifyOnlineEligiblePlayers(newest, current));
+                if (plugin.isEnabled()) {
+                    Bukkit.getScheduler().runTask(plugin, () -> notifyOnlineEligiblePlayers(newest, current));
+                }
             } else {
                 latestKnownVersion = null;
                 versionsBehind = -1;
@@ -155,7 +162,7 @@ public class UpdateChecker implements Listener {
         player.sendMessage(mm.format(mm.getRaw("update.available"), placeholders));
     }
 
-    private boolean isNewer(String remote, String current) {
+    static boolean isNewer(String remote, String current) {
         try {
             String[] remoteParts = remote.split("\\.");
             String[] currentParts = current.split("\\.");
@@ -174,7 +181,7 @@ public class UpdateChecker implements Listener {
         }
     }
 
-    private int parsePart(String part) {
+    private static int parsePart(String part) {
         StringBuilder digits = new StringBuilder();
         for (char c : part.toCharArray()) {
             if (Character.isDigit(c)) {

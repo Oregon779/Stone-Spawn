@@ -47,9 +47,19 @@ public class PlayerDeathRespawnListener implements Listener {
 
         event.setRespawnLocation(spawn);
 
+        boolean effects = plugin.getConfigManager().getBoolean("teleport.arrival.effects-enabled", true);
+        boolean message = plugin.getConfigManager().getBoolean("teleport.arrival.message-enabled", true);
+        if (!effects && !message) {
+            return;
+        }
         Bukkit.getScheduler().runTaskLater(plugin, () -> {
-            if (player.isOnline()) {
+            if (!player.isOnline()) {
+                return;
+            }
+            if (effects) {
                 plugin.getEffectManager().playArrivalEffect(player);
+            }
+            if (message) {
                 plugin.getNotificationManager().sendArrival(player);
             }
         }, 2L);

@@ -79,8 +79,22 @@ public class SpawnGui {
         playSound(player, "sounds.open");
     }
 
+    /** Closes every open spawn GUI, so no items can be taken out once the click listener is gone. */
+    public void closeAll() {
+        for (Player player : Bukkit.getOnlinePlayers()) {
+            Inventory top = player.getOpenInventory().getTopInventory();
+            if (top != null && top.getHolder(false) instanceof Holder) {
+                player.closeInventory();
+            }
+        }
+    }
+
     void handleClick(Player player, Holder holder, int slot) {
+        if (holder.used) {
+            return;
+        }
         if (holder.closeSlots.contains(slot)) {
+            holder.used = true;
             playSound(player, "sounds.click");
             Bukkit.getScheduler().runTask(plugin, () -> player.closeInventory());
             return;
@@ -90,6 +104,7 @@ public class SpawnGui {
         if (spawnName == null) {
             return;
         }
+        holder.used = true;
         playSound(player, "sounds.click");
         Bukkit.getScheduler().runTask(plugin, () -> {
             player.closeInventory();
@@ -274,6 +289,7 @@ public class SpawnGui {
         private final Map<Integer, String> spawnSlots = new HashMap<>();
         private final Set<Integer> closeSlots = new HashSet<>();
         private Inventory inventory;
+        private boolean used;
 
         @Override
         public Inventory getInventory() {

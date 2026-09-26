@@ -15,7 +15,7 @@ public class TeleportMoveListener implements Listener {
         this.plugin = plugin;
     }
 
-    @EventHandler
+    @EventHandler(ignoreCancelled = true)
     public void onMove(PlayerMoveEvent event) {
         Player player = event.getPlayer();
         if (!plugin.getTeleportManager().hasPending(player.getUniqueId())) {

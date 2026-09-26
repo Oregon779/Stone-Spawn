@@ -28,7 +28,8 @@ import dev.stonespawn.plugin.manager.WorldRestrictionManager;
 import org.bukkit.plugin.PluginManager;
 import org.bukkit.plugin.java.JavaPlugin;
 
-public final class StoneSpawn extends JavaPlugin {
+// Not final: MockBukkit subclasses the plugin main class in tests.
+public class StoneSpawn extends JavaPlugin {
 
     private ConfigManager configManager;
     private MessageManager messageManager;
@@ -58,6 +59,7 @@ public final class StoneSpawn extends JavaPlugin {
         teleportManager = new TeleportManager(this);
         notificationManager = new NotificationManager(this);
         effectManager = new EffectManager(this);
+        effectManager.reload();
         updateChecker = new UpdateChecker(this);
         elytraManager = new ElytraManager(this);
         spawnGui = new SpawnGui(this);
@@ -76,8 +78,17 @@ public final class StoneSpawn extends JavaPlugin {
 
     @Override
     public void onDisable() {
+        if (spawnGui != null) {
+            spawnGui.closeAll();
+        }
+        if (notificationManager != null) {
+            notificationManager.hideAll();
+        }
+        if (spawnManager != null) {
+            spawnManager.flush();
+        }
         if (updateChecker != null) {
-            updateChecker.stop();
+            updateChecker.shutdown();
         }
         if (effectManager != null) {
             effectManager.stopSpawnMarker();
@@ -90,7 +101,9 @@ public final class StoneSpawn extends JavaPlugin {
         messageManager.load();
         worldRestrictionManager.refresh();
         spawnGui.load();
+        effectManager.reload();
         effectManager.startSpawnMarker();
+        updateChecker.start();
     }
 
     private void registerCommands() {
@@ -113,6 +126,7 @@ public final class StoneSpawn extends JavaPlugin {
 
     private void registerListeners() {
         PluginManager pm = getServer().getPluginManager();
+        pm.registerEvents(spawnManager, this);
         pm.registerEvents(new PlayerJoinListener(this), this);
         pm.registerEvents(new PlayerDeathRespawnListener(this), this);
         pm.registerEvents(new VoidTeleportListener(this), this);

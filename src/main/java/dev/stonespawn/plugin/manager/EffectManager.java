@@ -1,5 +1,6 @@
 package dev.stonespawn.plugin.manager;
 
+import com.destroystokyo.paper.ParticleBuilder;
 import dev.stonespawn.plugin.StoneSpawn;
 import org.bukkit.Bukkit;
 import org.bukkit.Color;
@@ -12,16 +13,24 @@ import org.bukkit.entity.Player;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.scheduler.BukkitTask;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.ThreadLocalRandom;
 
 public class EffectManager {
 
+    // Vanilla range in which normal (non-forced) particles are sent to a player.
+    private static final double MARKER_VIEW_DISTANCE = 32.0;
+
     private final StoneSpawn plugin;
     private final Map<UUID, BukkitTask> countdownTasks = new HashMap<>();
+    private final Map<String, Optional<Sound>> soundCache = new HashMap<>();
+    private final Map<String, Optional<Particle>> particleCache = new HashMap<>();
     private BukkitTask spawnMarkerTask;
 
     public EffectManager(StoneSpawn plugin) {
@@ -181,8 +190,11 @@ public class EffectManager {
         double heightOffset = cfg.getDouble("spawn.marker.height-offset", 0.1);
         int intervalTicks = Math.max(1, cfg.getInt("spawn.marker.interval-ticks", 4));
         int particleCount = Math.max(1, cfg.getInt("spawn.marker.particle-count-per-point", 1));
+        double viewRange = MARKER_VIEW_DISTANCE + radius;
+        double viewRangeSquared = viewRange * viewRange;
 
         spawnMarkerTask = new BukkitRunnable() {
+            final Location scratch = new Location(null, 0, 0, 0);
             double angle = 0.0;
 
             @Override
@@ -192,21 +204,34 @@ public class EffectManager {
                 }
                 double angleRad = Math.toRadians(angle);
                 for (Location spawn : plugin.getSpawnManager().getAllSpawnLocations()) {
-                    if (spawn.getWorld() == null) {
+                    if (!spawn.isWorldLoaded()) {
                         continue;
                     }
+                    // One distance check per player and spawn, instead of one per player and particle point.
+                    List<Player> viewers = playersNear(spawn, viewRangeSquared, scratch);
+                    if (viewers.isEmpty()) {
+                        continue;
+                    }
+                    ParticleBuilder builder = particle.builder().count(particleCount).offset(0, 0, 0).extra(0).receivers(viewers);
                     for (int i = 0; i < points; i++) {
                         double a = angleRad + (2 * Math.PI * i / points);
-                        double x = Math.cos(a) * radius;
-                        double z = Math.sin(a) * radius;
-                        Location point = spawn.clone().add(x, heightOffset, z);
-                        spawn.getWorld().spawnParticle(particle, point, particleCount, 0, 0, 0, 0);
+                        builder.location(spawn.clone().add(Math.cos(a) * radius, heightOffset, Math.sin(a) * radius)).spawn();
                     }
                 }
 
                 angle = (angle + rotationSpeed) % 360.0;
             }
         }.runTaskTimer(plugin, 20L, intervalTicks);
+    }
+
+    private static List<Player> playersNear(Location center, double rangeSquared, Location scratch) {
+        List<Player> nearby = new ArrayList<>();
+        for (Player player : center.getWorld().getPlayers()) {
+            if (player.getLocation(scratch).distanceSquared(center) <= rangeSquared) {
+                nearby.add(player);
+            }
+        }
+        return nearby;
     }
 
     public void stopSpawnMarker() {
@@ -216,22 +241,37 @@ public class EffectManager {
         }
     }
 
+    /** Forgets parsed sound/particle names so config changes apply; invalid names are then reported once again. */
+    public void reload() {
+        soundCache.clear();
+        particleCache.clear();
+    }
+
+    /** @return the particle, or the fallback if the name is unknown or the particle needs extra data (e.g. DUST). */
     public Particle parseParticle(String name, Particle fallback) {
-        try {
-            return Particle.valueOf(name.toUpperCase());
-        } catch (IllegalArgumentException ex) {
-            plugin.getLogger().warning("Invalid particle '" + name + "' in config, using " + fallback + " instead.");
-            return fallback;
-        }
+        return particleCache.computeIfAbsent(String.valueOf(name), key -> {
+            try {
+                Particle particle = Particle.valueOf(key.trim().toUpperCase(Locale.ROOT));
+                if (particle.getDataType() != Void.class) {
+                    plugin.getLogger().warning("Particle '" + key + "' in config needs extra data and can't be used there, using the default instead.");
+                    return Optional.empty();
+                }
+                return Optional.of(particle);
+            } catch (IllegalArgumentException ex) {
+                plugin.getLogger().warning("Invalid particle '" + key + "' in config, using the default instead.");
+                return Optional.empty();
+            }
+        }).orElse(fallback);
     }
 
     public Sound parseSound(String name, Sound fallback) {
-        Sound sound = lookupSound(name);
-        if (sound == null) {
-            plugin.getLogger().warning("Invalid sound '" + name + "' in config, using " + fallback + " instead.");
-            return fallback;
-        }
-        return sound;
+        return soundCache.computeIfAbsent(String.valueOf(name), key -> {
+            Sound sound = lookupSound(key);
+            if (sound == null) {
+                plugin.getLogger().warning("Invalid sound '" + key + "' in config, using the default instead.");
+            }
+            return Optional.ofNullable(sound);
+        }).orElse(fallback);
     }
 
     // Sound is no longer an enum; its constants are looked up by field name like Bukkit's own deprecated valueOf.

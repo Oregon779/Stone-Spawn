@@ -17,7 +17,10 @@ public class PlayerQuitCleanupListener implements Listener {
     @EventHandler
     public void onQuit(PlayerQuitEvent event) {
         Player player = event.getPlayer();
-        plugin.getCooldownManager().clear(player.getUniqueId());
+        plugin.getCooldownManager().handleQuit(player.getUniqueId(),
+                plugin.getConfigManager().getInt("command.cooldown-seconds", 10));
         plugin.getTeleportManager().cancelTeleport(player, true);
+        plugin.getTeleportManager().clear(player.getUniqueId());
+        plugin.getNotificationManager().clear(player);
     }
 }

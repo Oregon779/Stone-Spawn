@@ -20,9 +20,12 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public class TeleportManager {
 
+    private static final long FALL_DAMAGE_IMMUNITY_MILLIS = 5000L;
+
     private final StoneSpawn plugin;
     private final Map<UUID, PendingTeleport> pending = new HashMap<>();
-    private final Set<UUID> fallDamageImmune = new HashSet<>();
+    private final Map<UUID, Long> fallDamageImmuneUntil = new HashMap<>();
+    private final Set<UUID> blindedByCountdown = new HashSet<>();
     private final Set<UUID> inFlight = ConcurrentHashMap.newKeySet();
 
     public TeleportManager(StoneSpawn plugin) {
@@ -44,14 +47,21 @@ public class TeleportManager {
             return;
         }
 
-        if (!player.hasPermission("stonespawn.bypass.cooldown")) {
+        UUID id = player.getUniqueId();
+        boolean useCooldown = !player.hasPermission("stonespawn.bypass.cooldown");
+        if (useCooldown) {
             int cooldownSeconds = plugin.getConfigManager().getInt("command.cooldown-seconds", 10);
-            int remaining = plugin.getCooldownManager().getRemaining(player.getUniqueId(), cooldownSeconds);
+            int remaining = plugin.getCooldownManager().getRemaining(id, cooldownSeconds);
             if (remaining > 0) {
                 mm.sendChat(player, "spawn.cooldown", Map.of("seconds", String.valueOf(remaining)));
                 return;
             }
-            plugin.getCooldownManager().setUsed(player.getUniqueId());
+        }
+        if (pending.containsKey(id)) {
+            return;
+        }
+        if (useCooldown) {
+            plugin.getCooldownManager().setUsed(id);
         }
 
         startTeleport(player, destination, TeleportContext.commandContext());
@@ -74,6 +84,7 @@ public class TeleportManager {
         boolean blindness = cfg.getBoolean("teleport.blindness-during-delay", false);
         if (blindness) {
             player.addPotionEffect(new PotionEffect(PotionEffectType.BLINDNESS, (delay + 1) * 20, 1, false, false, false));
+            blindedByCountdown.add(player.getUniqueId());
         }
 
         PendingTeleport pendingTeleport = new PendingTeleport(player.getUniqueId(), player.getLocation(), destination, context);
@@ -127,7 +138,7 @@ public class TeleportManager {
             pendingTeleport.getTask().cancel();
         }
         plugin.getEffectManager().stopCountdownEffects(player.getUniqueId());
-        player.removePotionEffect(PotionEffectType.BLINDNESS);
+        removeCountdownBlindness(player);
         if (!silent) {
             plugin.getMessageManager().sendChat(player, "spawn.cancelled-move", null);
         }
@@ -141,17 +152,21 @@ public class TeleportManager {
         ConfigManager cfg = plugin.getConfigManager();
 
         if (cfg.getBoolean("teleport.disable-fall-damage", true)) {
-            fallDamageImmune.add(player.getUniqueId());
-            Bukkit.getScheduler().runTaskLater(plugin, () -> fallDamageImmune.remove(player.getUniqueId()), 100L);
+            fallDamageImmuneUntil.put(player.getUniqueId(), System.currentTimeMillis() + FALL_DAMAGE_IMMUNITY_MILLIS);
         }
 
         player.teleportAsync(destination).whenComplete((success, throwable) -> {
             inFlight.remove(player.getUniqueId());
-            if (throwable != null || !Boolean.TRUE.equals(success)) {
+            if (!plugin.isEnabled()) {
                 return;
             }
             Bukkit.getScheduler().runTask(plugin, () -> {
-                player.removePotionEffect(PotionEffectType.BLINDNESS);
+                if (!pending.containsKey(player.getUniqueId())) {
+                    removeCountdownBlindness(player);
+                }
+                if (throwable != null || !Boolean.TRUE.equals(success)) {
+                    return;
+                }
                 if (!context.silent()) {
                     if (cfg.getBoolean("teleport.arrival.effects-enabled", true)) {
                         plugin.getEffectManager().playArrivalEffect(player);
@@ -165,8 +180,26 @@ public class TeleportManager {
         });
     }
 
+    private void removeCountdownBlindness(Player player) {
+        if (blindedByCountdown.remove(player.getUniqueId())) {
+            player.removePotionEffect(PotionEffectType.BLINDNESS);
+        }
+    }
+
     public boolean isFallDamageImmune(UUID uuid) {
-        return fallDamageImmune.contains(uuid);
+        Long until = fallDamageImmuneUntil.get(uuid);
+        if (until == null) {
+            return false;
+        }
+        if (until < System.currentTimeMillis()) {
+            fallDamageImmuneUntil.remove(uuid);
+            return false;
+        }
+        return true;
+    }
+
+    public void clear(UUID uuid) {
+        fallDamageImmuneUntil.remove(uuid);
     }
 
     public boolean isInFlight(UUID uuid) {

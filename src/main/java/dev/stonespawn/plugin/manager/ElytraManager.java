@@ -103,9 +103,6 @@ public class ElytraManager {
         int particleCount = cfg.getInt("elytra.boost.particle-count", 20);
         if (particleCount > 0) {
             Particle particle = effects.parseParticle(cfg.getString("elytra.boost.particle", "FIREWORK"), Particle.FIREWORK);
-            if (particle.getDataType() != Void.class) {
-                particle = Particle.FIREWORK;
-            }
             player.getWorld().spawnParticle(particle, location, particleCount, 0.3, 0.3, 0.3, 0.05);
         }
         return true;

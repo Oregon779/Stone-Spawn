@@ -63,7 +63,7 @@ public class SpawnCommand implements CommandExecutor, TabCompleter {
                 mm.sendChat(player, "general.no-permission", null);
                 return true;
             }
-            teleportSelf(player, spawnManager.getSpawn(spawnName), "spawn.not-found", Map.of("spawn", first));
+            teleportSelf(player, spawnManager.getSpawn(spawnName), "spawn.not-found", Map.of("spawn", spawnName));
             return true;
         }
 
@@ -72,7 +72,7 @@ public class SpawnCommand implements CommandExecutor, TabCompleter {
             return true;
         }
 
-        mm.sendChat(sender, "spawn.not-found", Map.of("spawn", first));
+        mm.sendChat(sender, "spawn.not-found", Map.of("spawn", MessageManager.sanitizeInput(first)));
         return true;
     }
 
@@ -97,7 +97,7 @@ public class SpawnCommand implements CommandExecutor, TabCompleter {
 
         Player target = Bukkit.getPlayerExact(targetName);
         if (target == null) {
-            mm.sendChat(sender, "general.player-not-found", Map.of("player", targetName));
+            mm.sendChat(sender, "general.player-not-found", Map.of("player", MessageManager.sanitizeInput(targetName)));
             return;
         }
 

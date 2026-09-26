@@ -51,7 +51,7 @@ public class ElytraListener implements Listener {
     @EventHandler(ignoreCancelled = true)
     public void onSwapHands(PlayerSwapHandItemsEvent event) {
         Player player = event.getPlayer();
-        if (isTrigger(BoostTrigger.SWAP_HAND) && elytra.isGliding(player.getUniqueId())) {
+        if (isBoostInput(player, BoostTrigger.SWAP_HAND)) {
             event.setCancelled(true);
             elytra.tryBoost(player);
         }
@@ -59,7 +59,7 @@ public class ElytraListener implements Listener {
 
     @EventHandler(ignoreCancelled = true)
     public void onSneak(PlayerToggleSneakEvent event) {
-        if (event.isSneaking() && isTrigger(BoostTrigger.SNEAK)) {
+        if (event.isSneaking() && isBoostInput(event.getPlayer(), BoostTrigger.SNEAK)) {
             elytra.tryBoost(event.getPlayer());
         }
     }
@@ -68,7 +68,8 @@ public class ElytraListener implements Listener {
     @EventHandler
     public void onInteract(PlayerInteractEvent event) {
         Action action = event.getAction();
-        if ((action == Action.LEFT_CLICK_AIR || action == Action.LEFT_CLICK_BLOCK) && isTrigger(BoostTrigger.LEFT_CLICK)) {
+        if ((action == Action.LEFT_CLICK_AIR || action == Action.LEFT_CLICK_BLOCK)
+                && isBoostInput(event.getPlayer(), BoostTrigger.LEFT_CLICK)) {
             elytra.tryBoost(event.getPlayer());
         }
     }
@@ -104,7 +105,7 @@ public class ElytraListener implements Listener {
         elytra.clear(event.getPlayer().getUniqueId());
     }
 
-    private boolean isTrigger(BoostTrigger trigger) {
-        return plugin.getConfigManager().isElytraEnabled() && plugin.getConfigManager().getBoostTrigger() == trigger;
+    private boolean isBoostInput(Player player, BoostTrigger trigger) {
+        return elytra.isGliding(player.getUniqueId()) && plugin.getConfigManager().getBoostTrigger() == trigger;
     }
 }

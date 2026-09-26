@@ -1,5 +1,6 @@
 package dev.stonespawn.plugin.config;
 
+import dev.stonespawn.plugin.util.AtomicFiles;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -28,19 +29,20 @@ public final class ConfigUpdater {
             int added = mergeSection(defaultConfig, currentConfig);
 
             if (added > 0) {
-                currentConfig.save(targetFile);
+                AtomicFiles.writeString(targetFile.toPath(), currentConfig.saveToString());
             }
             return new UpdateResult(added > 0, added);
         }
     }
 
-    private static int mergeSection(ConfigurationSection defaults, ConfigurationSection current) {
+    static int mergeSection(ConfigurationSection defaults, ConfigurationSection current) {
         int added = 0;
         for (String key : defaults.getKeys(false)) {
             Object defaultValue = defaults.get(key);
 
             if (!current.contains(key, true)) {
                 current.set(key, defaultValue);
+                copyComments(defaults, current, key);
                 added++;
                 continue;
             }
@@ -52,6 +54,18 @@ public final class ConfigUpdater {
             }
         }
         return added;
+    }
+
+    private static void copyComments(ConfigurationSection defaults, ConfigurationSection current, String key) {
+        current.setComments(key, defaults.getComments(key));
+        current.setInlineComments(key, defaults.getInlineComments(key));
+        if (defaults.get(key) instanceof ConfigurationSection defaultSection
+                && current.get(key) instanceof ConfigurationSection currentSection
+                && currentSection != defaultSection) {
+            for (String child : defaultSection.getKeys(false)) {
+                copyComments(defaultSection, currentSection, child);
+            }
+        }
     }
 
     public record UpdateResult(boolean changed, int addedKeys) {

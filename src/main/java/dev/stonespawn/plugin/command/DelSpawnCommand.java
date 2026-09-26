@@ -35,7 +35,7 @@ public class DelSpawnCommand implements CommandExecutor, TabCompleter {
 
         String name = SpawnManager.normalize(args[0]);
         if (!plugin.getSpawnManager().deleteSpawn(name)) {
-            mm.sendChat(sender, "spawn.not-found", Map.of("spawn", args[0]));
+            mm.sendChat(sender, "spawn.not-found", Map.of("spawn", MessageManager.sanitizeInput(args[0])));
             return true;
         }
 

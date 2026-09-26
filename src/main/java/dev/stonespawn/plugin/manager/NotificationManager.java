@@ -42,6 +42,29 @@ public class NotificationManager {
         this.plugin = plugin;
     }
 
+    public void hideAll() {
+        bossBarHideTasks.values().forEach(BukkitTask::cancel);
+        bossBarHideTasks.clear();
+        activeBossBars.forEach((uuid, bar) -> {
+            Player player = Bukkit.getPlayer(uuid);
+            if (player != null) {
+                player.hideBossBar(bar);
+            }
+        });
+        activeBossBars.clear();
+    }
+
+    public void clear(Player player) {
+        BukkitTask hideTask = bossBarHideTasks.remove(player.getUniqueId());
+        if (hideTask != null) {
+            hideTask.cancel();
+        }
+        BossBar bar = activeBossBars.remove(player.getUniqueId());
+        if (bar != null) {
+            player.hideBossBar(bar);
+        }
+    }
+
     public void sendCountdown(Player player, int secondsRemaining) {
         Map<String, String> placeholders = Map.of("seconds", String.valueOf(secondsRemaining));
         MessageDisplayType type = plugin.getConfigManager().getCountdownNotificationType();
@@ -99,18 +122,19 @@ public class NotificationManager {
             overlay = alias != null ? BossBar.Overlay.valueOf(alias) : BossBar.Overlay.PROGRESS;
         }
 
-        BossBar existing = activeBossBars.remove(player.getUniqueId());
-        if (existing != null) {
-            player.hideBossBar(existing);
+        // Updating the shown bar sends one packet; replacing it (hide + show) would send two every countdown second.
+        BossBar bar = activeBossBars.get(player.getUniqueId());
+        if (bar != null) {
+            bar.name(component).color(color).overlay(overlay);
+        } else {
+            bar = BossBar.bossBar(component, 1.0f, color, overlay);
+            player.showBossBar(bar);
+            activeBossBars.put(player.getUniqueId(), bar);
         }
         BukkitTask existingHideTask = bossBarHideTasks.remove(player.getUniqueId());
         if (existingHideTask != null) {
             existingHideTask.cancel();
         }
-
-        BossBar bar = BossBar.bossBar(component, 1.0f, color, overlay);
-        player.showBossBar(bar);
-        activeBossBars.put(player.getUniqueId(), bar);
 
         BukkitTask hideTask = Bukkit.getScheduler().runTaskLater(plugin, () -> {
             BossBar current = activeBossBars.remove(player.getUniqueId());
