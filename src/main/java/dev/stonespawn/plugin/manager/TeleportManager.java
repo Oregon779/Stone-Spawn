@@ -37,6 +37,26 @@ public class TeleportManager {
         return pending.get(uuid);
     }
 
+    public void requestCommandTeleport(Player player, Location destination) {
+        MessageManager mm = plugin.getMessageManager();
+        if (!plugin.getWorldRestrictionManager().isAllowed(player.getWorld())) {
+            mm.sendChat(player, "general.world-blocked", null);
+            return;
+        }
+
+        if (!player.hasPermission("stonespawn.bypass.cooldown")) {
+            int cooldownSeconds = plugin.getConfigManager().getInt("command.cooldown-seconds", 10);
+            int remaining = plugin.getCooldownManager().getRemaining(player.getUniqueId(), cooldownSeconds);
+            if (remaining > 0) {
+                mm.sendChat(player, "spawn.cooldown", Map.of("seconds", String.valueOf(remaining)));
+                return;
+            }
+            plugin.getCooldownManager().setUsed(player.getUniqueId());
+        }
+
+        startTeleport(player, destination, TeleportContext.commandContext());
+    }
+
     public void startTeleport(Player player, Location destination, TeleportContext context) {
         ConfigManager cfg = plugin.getConfigManager();
         int delay = cfg.getInt("teleport.delay-seconds", 3);

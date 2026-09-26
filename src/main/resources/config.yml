@@ -27,6 +27,8 @@
 # first time always see English messages until an admin changes this.
 language: en
 
+# The automatic teleports below always use the main spawn (/setspawn without
+# a name). Extra named spawns are only reached with /spawn <name> or the GUI.
 spawn:
   # Teleport players to spawn when they join the server.
   # ALWAYS      -> every single join
@@ -172,6 +174,46 @@ teleport:
 command:
   # Cooldown in seconds between uses of /spawn.
   cooldown-seconds: 10
+  # Admins can create extra spawns with /setspawn <name>. As soon as more than
+  # one spawn exists, /spawn without a name opens a spawn selection GUI (its
+  # look is configured in gui.yml). Set to false to make /spawn always go to
+  # the main spawn - the other spawns are then reached with /spawn <name>.
+  spawn-gui: true
+
+# Players who jump or fall off the area around ANY spawn point (the spawn
+# island) start gliding like with an elytra - no elytra item needed. The
+# glide ends as soon as they land (ground, water, lava, ladders/vines) and
+# starts again every time they jump off a spawn island.
+elytra:
+  enabled: false
+  # Radius in blocks around each spawn point that counts as its spawn island.
+  radius: 50
+  # How many blocks a player has to fall before the glide starts, so that
+  # normal jumps and small steps on the island don't trigger it (min. 1.5).
+  min-fall-distance: 4.0
+  # Cancel fall damage and "flew into a wall" damage while gliding and for
+  # 2 seconds after landing.
+  disable-damage: true
+
+  # A one-time rocket boost into the looking direction while gliding.
+  boost:
+    enabled: true
+    # Which key triggers the boost. A server only receives a few keys from the
+    # game, free keys like "B" never reach it, so pick one of:
+    #   SWAP_HAND   -> F (swap item to off hand - the swap is blocked while gliding)
+    #   SNEAK       -> Shift
+    #   LEFT_CLICK  -> left mouse button
+    trigger: SWAP_HAND
+    # How many boosts a player gets per glide. 0 = unlimited.
+    uses-per-glide: 1
+    # Launch speed into the looking direction. ~1.5 feels like a firework rocket.
+    strength: 1.5
+    sound: ENTITY_FIREWORK_ROCKET_LAUNCH
+    sound-volume: 1.0
+    sound-pitch: 1.0
+    particle: FIREWORK
+    # 0 = no particles.
+    particle-count: 20
 
 # Restrict in which worlds the plugin is active.
 worlds:

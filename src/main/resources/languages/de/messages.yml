@@ -25,9 +25,20 @@ general:
 
 setspawn:
   success: "&a✔ Der Spawnpunkt wurde auf deine aktuelle Position gesetzt."
+  # {spawn}
+  success-named: "&a✔ Der Spawn &b{spawn} &awurde auf deine aktuelle Position gesetzt."
+  # {spawn}
+  invalid-name: "&c✖ &f{spawn} &cist kein gültiger Name. Erlaubt sind a-z, 0-9, _ und - (max. 32 Zeichen)."
+
+delspawn:
+  # {spawn}
+  success: "&a✔ Der Spawn &b{spawn} &awurde gelöscht."
+  usage: "&c✖ Benutzung: &f/delspawn <Name>"
 
 spawn:
   no-spawn-set: "&c✖ Es wurde noch kein Spawnpunkt festgelegt."
+  # {spawn}
+  not-found: "&c✖ Es gibt keinen Spawn namens &f{spawn}&c."
   # {seconds}
   cooldown: "&c⏱ Bitte warte noch &b{seconds}s&c, bevor du das erneut nutzen kannst."
   cancelled-move: "&c✖ Teleport abgebrochen, da du dich bewegt hast."
@@ -40,6 +51,9 @@ help:
   header: "<gradient:#9AA5B1:#55C6FF><bold>▬▬▬▬▬ StoneSpawn Hilfe ▬▬▬▬▬</bold></gradient>"
   setspawn: "&b/setspawn &8» &7Setzt den Spawnpunkt auf deine aktuelle Position"
   spawn: "&b/spawn [Spieler] &8» &7Teleportiert zum Spawn oder einen anderen Spieler dorthin"
+  spawn-named: "&b/spawn <Spawn> &8» &7Teleportiert zu einem bestimmten Spawn"
+  setspawn-named: "&b/setspawn <Name> &8» &7Setzt einen weiteren, benannten Spawn"
+  delspawn: "&b/delspawn <Name> &8» &7Löscht einen Spawn"
   reload: "&b/stonespawn reload &8» &7Lädt Konfiguration und Nachrichten neu"
   checkupdate: "&b/stonespawn checkupdate &8» &7Prüft sofort auf Modrinth nach einer neuen Version"
   help: "&b/stonespawn help &8» &7Zeigt dieses Hilfe-Menü an"
@@ -50,3 +64,11 @@ update:
   versions-behind: "{count} Version(en)"
   versions-behind-unknown: "einer unbekannten Anzahl an Versionen"
   check-triggered: "&b⟳ &7Prüfe Modrinth jetzt auf Updates... &8schau in die Konsole für das Ergebnis."
+
+elytra:
+  # Wird beim Start des Gleitens in der Actionbar angezeigt, leer ("") = aus. {key}
+  boost-hint: "&e✦ &7Drücke &b{key} &7für einen Raketen-Boost!"
+  keys:
+    swap-hand: "F"
+    sneak: "Shift"
+    left-click: "Linksklick"

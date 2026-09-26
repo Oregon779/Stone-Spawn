@@ -25,9 +25,20 @@ general:
 
 setspawn:
   success: "&a✔ The spawn point has been set to your current location."
+  # {spawn}
+  success-named: "&a✔ The spawn &b{spawn} &ahas been set to your current location."
+  # {spawn}
+  invalid-name: "&c✖ &f{spawn} &cis not a valid name. Allowed are a-z, 0-9, _ and - (max. 32 characters)."
+
+delspawn:
+  # {spawn}
+  success: "&a✔ The spawn &b{spawn} &ahas been deleted."
+  usage: "&c✖ Usage: &f/delspawn <name>"
 
 spawn:
   no-spawn-set: "&c✖ No spawn point has been set yet."
+  # {spawn}
+  not-found: "&c✖ There is no spawn called &f{spawn}&c."
   # {seconds}
   cooldown: "&c⏱ Please wait &b{seconds}s &cbefore using this again."
   cancelled-move: "&c✖ Teleport cancelled because you moved."
@@ -40,6 +51,9 @@ help:
   header: "<gradient:#9AA5B1:#55C6FF><bold>▬▬▬▬▬ StoneSpawn Help ▬▬▬▬▬</bold></gradient>"
   setspawn: "&b/setspawn &8» &7Set the spawn point to your current location"
   spawn: "&b/spawn [player] &8» &7Teleport to spawn, or teleport another player"
+  spawn-named: "&b/spawn <spawn> &8» &7Teleport to a specific spawn"
+  setspawn-named: "&b/setspawn <name> &8» &7Set an additional, named spawn"
+  delspawn: "&b/delspawn <name> &8» &7Delete a spawn"
   reload: "&b/stonespawn reload &8» &7Reload the configuration and messages"
   checkupdate: "&b/stonespawn checkupdate &8» &7Check Modrinth for a new version right now"
   help: "&b/stonespawn help &8» &7Show this help menu"
@@ -50,3 +64,11 @@ update:
   versions-behind: "{count} version(s)"
   versions-behind-unknown: "an unknown number of versions"
   check-triggered: "&b⟳ &7Checking Modrinth for updates now... &8watch the console for the result."
+
+elytra:
+  # Shown in the action bar when gliding starts, empty ("") = off. {key}
+  boost-hint: "&e✦ &7Press &b{key} &7for a rocket boost!"
+  keys:
+    swap-hand: "F"
+    sneak: "Shift"
+    left-click: "Left click"

@@ -1,0 +1,77 @@
+# =====================================================================
+#                          StoneSpawn - gui.yml
+#                        A plugin by Stone Plugins
+# =====================================================================
+#
+# The spawn selection GUI. It opens on /spawn as soon as more than one
+# spawn exists (switch it off in config.yml -> command.spawn-gui).
+#
+# Texts support &-codes, hex colors (&#FF00AA) and MiniMessage.
+# Slots count from 0 (top left) to rows * 9 - 1 (bottom right).
+# Material names: https://jd.papermc.io/paper/org/bukkit/Material.html
+# Sound names: https://jd.papermc.io/paper/org/bukkit/Sound.html
+#
+# Every item (spawn-item, spawns.<name>, filler, items.<key>) supports:
+#   material, amount, name, lore, glow (true/false)
+#   item-model (e.g. "myserver:spawn_icon", for resource packs)
+#
+# Missing options are added automatically on plugin updates. Existing
+# values you changed are never overwritten.
+# =====================================================================
+
+title: "&8Choose a spawn"
+# Number of rows, 1 to 6.
+rows: 3
+
+# Slots used for spawns without a fixed slot, in this order. When they are
+# full, the remaining free slots are used.
+spawn-slots: [10, 11, 12, 13, 14, 15, 16]
+
+# Look of every spawn. Order: main spawn first, then alphabetically.
+# Placeholders: {spawn} {world} {x} {y} {z}
+spawn-item:
+  material: ENDER_PEARL
+  name: "&b&l{spawn}"
+  lore:
+    - "&7World: &f{world}"
+    - "&7Position: &f{x}&7, &f{y}&7, &f{z}"
+    - ""
+    - "&eClick to teleport"
+  glow: false
+
+# Changes for single spawns, key = spawn name. Every option of spawn-item
+# can be overridden, plus:
+#   slot: 13      -> fixed slot for this spawn
+#   hidden: true  -> not shown in the GUI (/spawn <name> still works)
+# Example:
+#   spawns:
+#     spawn:
+#       slot: 13
+#       material: GRASS_BLOCK
+#       name: "&a&lMain spawn"
+#       glow: true
+spawns: {}
+
+# Fills every slot that has no other item.
+filler:
+  enabled: true
+  material: GRAY_STAINED_GLASS_PANE
+  name: " "
+
+# Extra items like decoration or a close button, key = any name you like.
+# "action: CLOSE" closes the GUI on click, anything else does nothing.
+# Example:
+#   items:
+#     close:
+#       slot: 22
+#       material: BARRIER
+#       name: "&cClose"
+#       action: CLOSE
+items: {}
+
+# Leave a sound empty ("") to play nothing.
+sounds:
+  open: BLOCK_ENDER_CHEST_OPEN
+  click: UI_BUTTON_CLICK
+  volume: 0.6
+  pitch: 1.0

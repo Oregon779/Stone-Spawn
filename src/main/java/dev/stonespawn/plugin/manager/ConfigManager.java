@@ -2,6 +2,7 @@ package dev.stonespawn.plugin.manager;
 
 import dev.stonespawn.plugin.StoneSpawn;
 import dev.stonespawn.plugin.config.ConfigUpdater;
+import dev.stonespawn.plugin.model.BoostTrigger;
 import dev.stonespawn.plugin.model.JoinMode;
 import dev.stonespawn.plugin.model.MessageDisplayType;
 import dev.stonespawn.plugin.model.WorldMode;
@@ -22,6 +23,9 @@ public class ConfigManager {
     private volatile boolean voidTeleportEnabled;
     private volatile double voidHeight;
     private volatile boolean cancelOnMove;
+    private volatile boolean elytraEnabled;
+    private volatile double elytraRadius;
+    private volatile double elytraMinFallDistance;
 
     public ConfigManager(StoneSpawn plugin) {
         this.plugin = plugin;
@@ -47,6 +51,9 @@ public class ConfigManager {
         voidTeleportEnabled = config.getBoolean("spawn.void.enabled", false);
         voidHeight = config.getDouble("spawn.void.height", -64);
         cancelOnMove = config.getBoolean("teleport.cancel-on-move", true);
+        elytraEnabled = config.getBoolean("elytra.enabled", false);
+        elytraRadius = Math.max(1.0, config.getDouble("elytra.radius", 50));
+        elytraMinFallDistance = Math.max(1.5, config.getDouble("elytra.min-fall-distance", 4.0));
     }
 
     public void reload() {
@@ -63,6 +70,22 @@ public class ConfigManager {
 
     public boolean isCancelOnMove() {
         return cancelOnMove;
+    }
+
+    public boolean isElytraEnabled() {
+        return elytraEnabled;
+    }
+
+    public double getElytraRadius() {
+        return elytraRadius;
+    }
+
+    public double getElytraMinFallDistance() {
+        return elytraMinFallDistance;
+    }
+
+    public BoostTrigger getBoostTrigger() {
+        return BoostTrigger.fromConfig(getString("elytra.boost.trigger", "SWAP_HAND"), BoostTrigger.SWAP_HAND);
     }
 
     public String getString(String path, String def) {

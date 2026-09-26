@@ -1,6 +1,6 @@
 # StoneSpawn
 
-A configurable server spawn point plugin for Paper 1.21+, by **Stone Plugins**.
+A configurable server spawn point plugin for Paper 26.2+, by **Stone Plugins**.
 
 Set a spawn point, teleport to it with `/spawn`, and let StoneSpawn handle
 join/death/void/world-change teleports automatically - complete with a
@@ -11,6 +11,12 @@ chat/actionbar/bossbar/title messages.
 
 - `/setspawn` - set the server spawn point to your current location
 - `/spawn [player]` - teleport to spawn, or teleport another player there
+- Multiple spawns: `/setspawn <name>` adds named spawns, `/spawn <name>`
+  teleports to one, `/delspawn <name>` removes one
+- Spawn selection GUI: with more than one spawn, `/spawn` opens a fully
+  customizable GUI (`gui.yml`), can be switched off in `config.yml`
+- Elytra glide: players who jump off a spawn island glide down without an
+  elytra item, with an optional one-time rocket boost (off by default)
 - Automatic teleport to spawn:
   - on join (always, only on first join, or never)
   - on death (bed and respawn anchor spawn points can be respected or ignored)
@@ -44,7 +50,7 @@ chat/actionbar/bossbar/title messages.
 3. Stand where you want spawn to be and run `/setspawn`.
 4. Adjust `plugins/StoneSpawn/config.yml` to taste, then `/stonespawn reload`.
 
-Requires Paper (or a Paper fork) 1.21+ and Java 21. Not supported on Folia.
+Requires Paper (or a Paper fork) 26.2+ and Java 25. Not supported on Folia.
 
 ## Configuration
 
@@ -58,7 +64,9 @@ Requires Paper (or a Paper fork) 1.21+ and Java 21. Not supported on Folia.
   feedback (help, errors, cooldown messages, ...), translated per language.
   Add a new language by creating `plugins/StoneSpawn/languages/<code>/messages.yml`
   and setting `language: <code>` in `config.yml`.
-- `plugins/StoneSpawn/data.yml` - stores the spawn location and which
+- `plugins/StoneSpawn/gui.yml` - title, size, layout, items, texts and
+  sounds of the spawn selection GUI.
+- `plugins/StoneSpawn/data.yml` - stores the spawn locations and which
   players have joined before. Not meant to be edited by hand.
 
 Missing options are added automatically when the plugin updates; your
@@ -68,18 +76,22 @@ existing settings are never overwritten, even in nested sections.
 
 | Permission                  | Default | Description                                                            |
 |------------------------------|---------|--------------------------------------------------------------------------|
-| `stonespawn.use`              | true    | Teleport yourself to spawn with `/spawn`                                |
-| `stonespawn.admin`            | op      | Set spawn, teleport others, reload, checkupdate, update notifications   |
+| `stonespawn.use`              | true    | Teleport yourself to a spawn with `/spawn`, `/spawn <name>` or the GUI  |
+| `stonespawn.admin`            | op      | Set/delete spawns, teleport others, reload, checkupdate, update notifications |
 | `stonespawn.bypass`           | op      | Bypass both the cooldown and the teleport delay (parent of the two below) |
 | `stonespawn.bypass.cooldown`  | op      | Bypass the `/spawn` command cooldown                                    |
 | `stonespawn.bypass.delay`     | op      | Bypass the teleport delay and countdown                                 |
+| `stonespawn.elytra`           | true    | Glide and boost after jumping off a spawn island (if enabled)           |
 
 ## Commands
 
 | Command                          | Description                                             |
 |-----------------------------------|-----------------------------------------------------------|
-| `/setspawn`                       | Set the spawn point to your current location             |
-| `/spawn [player]`                 | Teleport to spawn, or teleport another player there       |
+| `/setspawn [name]`                | Set the main spawn, or a named extra spawn, to your location |
+| `/delspawn <name>`                | Delete a spawn                                            |
+| `/spawn`                          | Teleport to the main spawn, or open the GUI if there are several spawns |
+| `/spawn <spawn> [player]`         | Teleport to a named spawn, or teleport another player there |
+| `/spawn <player>`                 | Teleport another player to the main spawn                 |
 | `/stonespawn reload`               | Reload the configuration and messages                     |
 | `/stonespawn checkupdate`          | Check Modrinth for a new version right now                |
 | `/stonespawn help`                 | Show the help menu (also `/sp`, `/ss`)                    |

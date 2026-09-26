@@ -4,13 +4,16 @@ import dev.stonespawn.plugin.StoneSpawn;
 import org.bukkit.Bukkit;
 import org.bukkit.Color;
 import org.bukkit.Location;
+import org.bukkit.NamespacedKey;
 import org.bukkit.Particle;
+import org.bukkit.Registry;
 import org.bukkit.Sound;
 import org.bukkit.entity.Player;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.scheduler.BukkitTask;
 
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ThreadLocalRandom;
@@ -167,7 +170,7 @@ public class EffectManager {
         if (!cfg.getBoolean("spawn.marker.enabled", true)) {
             return;
         }
-        if (!plugin.getSpawnManager().hasSpawn()) {
+        if (plugin.getSpawnManager().getSpawnCount() == 0) {
             return;
         }
 
@@ -187,18 +190,18 @@ public class EffectManager {
                 if (Bukkit.getOnlinePlayers().isEmpty()) {
                     return;
                 }
-                Location spawn = plugin.getSpawnManager().getSpawn();
-                if (spawn == null || spawn.getWorld() == null) {
-                    return;
-                }
-
                 double angleRad = Math.toRadians(angle);
-                for (int i = 0; i < points; i++) {
-                    double a = angleRad + (2 * Math.PI * i / points);
-                    double x = Math.cos(a) * radius;
-                    double z = Math.sin(a) * radius;
-                    Location point = spawn.clone().add(x, heightOffset, z);
-                    spawn.getWorld().spawnParticle(particle, point, particleCount, 0, 0, 0, 0);
+                for (Location spawn : plugin.getSpawnManager().getAllSpawnLocations()) {
+                    if (spawn.getWorld() == null) {
+                        continue;
+                    }
+                    for (int i = 0; i < points; i++) {
+                        double a = angleRad + (2 * Math.PI * i / points);
+                        double x = Math.cos(a) * radius;
+                        double z = Math.sin(a) * radius;
+                        Location point = spawn.clone().add(x, heightOffset, z);
+                        spawn.getWorld().spawnParticle(particle, point, particleCount, 0, 0, 0, 0);
+                    }
                 }
 
                 angle = (angle + rotationSpeed) % 360.0;
@@ -213,21 +216,34 @@ public class EffectManager {
         }
     }
 
-    private Particle parseParticle(String name, Particle fallback) {
+    public Particle parseParticle(String name, Particle fallback) {
         try {
             return Particle.valueOf(name.toUpperCase());
         } catch (IllegalArgumentException ex) {
-            plugin.getLogger().warning("Invalid particle '" + name + "' in config.yml, using " + fallback + " instead.");
+            plugin.getLogger().warning("Invalid particle '" + name + "' in config, using " + fallback + " instead.");
             return fallback;
         }
     }
 
-    private Sound parseSound(String name, Sound fallback) {
-        try {
-            return Sound.valueOf(name.toUpperCase());
-        } catch (IllegalArgumentException ex) {
-            plugin.getLogger().warning("Invalid sound '" + name + "' in config.yml, using " + fallback + " instead.");
+    public Sound parseSound(String name, Sound fallback) {
+        Sound sound = lookupSound(name);
+        if (sound == null) {
+            plugin.getLogger().warning("Invalid sound '" + name + "' in config, using " + fallback + " instead.");
             return fallback;
         }
+        return sound;
+    }
+
+    // Sound is no longer an enum; its constants are looked up by field name like Bukkit's own deprecated valueOf.
+    private Sound lookupSound(String name) {
+        if (name == null || name.isBlank()) {
+            return null;
+        }
+        try {
+            return (Sound) Sound.class.getField(name.trim().toUpperCase(Locale.ROOT)).get(null);
+        } catch (NoSuchFieldException | IllegalAccessException | ClassCastException ignored) {
+        }
+        NamespacedKey key = NamespacedKey.fromString(name.trim().toLowerCase(Locale.ROOT));
+        return key == null ? null : Registry.SOUNDS.get(key);
     }
 }

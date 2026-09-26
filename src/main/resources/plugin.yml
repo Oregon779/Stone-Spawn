@@ -8,12 +8,16 @@ folia-supported: false
 
 commands:
   setspawn:
-    description: Set the server spawn point to your current location.
-    usage: /setspawn
+    description: Set the main spawn point, or a named extra spawn, to your current location.
+    usage: /setspawn [name]
+
+  delspawn:
+    description: Delete a spawn point.
+    usage: /delspawn <name>
 
   spawn:
-    description: Teleport to the server spawn point, or teleport another player there.
-    usage: /spawn [player]
+    description: Teleport to a spawn point (or open the spawn selection), or teleport another player there.
+    usage: /spawn [spawn] [player]
 
   stonespawn:
     description: Main StoneSpawn command for reloading the plugin and viewing help.
@@ -22,11 +26,15 @@ commands:
 
 permissions:
   stonespawn.admin:
-    description: Access to all StoneSpawn admin actions (setspawn, teleporting others, reload, checkupdate, update notifications).
+    description: Access to all StoneSpawn admin actions (setspawn, delspawn, teleporting others, reload, checkupdate, update notifications).
     default: op
 
   stonespawn.use:
-    description: Allows teleporting yourself to the spawn point with /spawn.
+    description: Allows teleporting yourself to a spawn point with /spawn, /spawn <name> or the spawn selection GUI.
+    default: true
+
+  stonespawn.elytra:
+    description: Allows gliding (and boosting) after jumping off a spawn island, if enabled in config.yml.
     default: true
 
   stonespawn.bypass:

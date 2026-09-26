@@ -10,6 +10,8 @@ StoneSpawn lets you:
 
 - set the server spawn point to your current location with one command (centered on the block you're standing on)
 - teleport yourself (or another player) to spawn with `/spawn`
+- create several named spawns and pick one with `/spawn <name>` or a fully customizable selection GUI
+- let players glide down like with an elytra after jumping off a spawn island, with an optional rocket boost
 - automatically teleport players to spawn on join (always, first join only, or never), on death, when falling into the void, or on world change - death and void teleportation are off by default, join/world-change are configurable
 - run a teleport countdown with a colored double-helix particle spiral around the player and a sound that rises in pitch as it counts down
 - watch particles gather inward around the player the moment they arrive at spawn
@@ -23,13 +25,14 @@ Every countdown/arrival message (Chat, ActionBar, BossBar, Title) is fully confi
 
 ## Installation
 
-**Requirements:** Paper server 1.21 or newer, Java 21
+**Requirements:** Paper server 26.2 or newer, Java 25
 
 1. Download the latest `StoneSpawn-X.X.X.jar`
 2. Copy it into your server's plugins folder
 3. Restart the server
 4. On first start, these are created automatically:
    - `plugins/StoneSpawn/config.yml`
+   - `plugins/StoneSpawn/gui.yml`
    - `plugins/StoneSpawn/languages/en/messages.yml`
    - `plugins/StoneSpawn/languages/de/messages.yml`
    - `plugins/StoneSpawn/data.yml`
@@ -40,7 +43,7 @@ New installations default to English for command feedback. Switch to German (or 
 The console prints exactly one line on startup, e.g.:
 
 ```
-Config loaded (en), spawn point not set - use /setspawn - commands, listeners and update checker ready.
+Config loaded (en), 0 spawn point(s), main spawn not set - use /setspawn - commands, listeners and update checker ready.
 ```
 
 ---
@@ -75,9 +78,15 @@ Base command: `/stonespawn` (aliases: `/sp`, `/ss`)
 
 | Command | Description | Permission |
 |---|---|---|
-| `/setspawn` | Set the spawn point to your current location (centered on the block) | `stonespawn.admin` |
-| `/spawn` | Teleport yourself to spawn | `stonespawn.use` |
-| `/spawn <player>` | Teleport another player to spawn | `stonespawn.admin` |
+| `/setspawn` | Set the main spawn point to your current location (centered on the block) | `stonespawn.admin` |
+| `/setspawn <name>` | Set an additional, named spawn (a-z, 0-9, `_`, `-`, max. 32 characters) | `stonespawn.admin` |
+| `/delspawn <name>` | Delete a spawn | `stonespawn.admin` |
+| `/spawn` | Teleport yourself to the main spawn - or open the spawn selection GUI if there is more than one spawn | `stonespawn.use` |
+| `/spawn <spawn>` | Teleport yourself to a named spawn | `stonespawn.use` |
+| `/spawn <player>` | Teleport another player to the main spawn | `stonespawn.admin` |
+| `/spawn <spawn> <player>` | Teleport another player to a named spawn | `stonespawn.admin` |
+
+If a spawn and an online player share the same name, `/spawn <name>` always means the spawn.
 
 **Admin**
 
@@ -93,8 +102,12 @@ Commands you don't have permission for don't appear in tab-completion at all - `
 
 ```
 /setspawn
+/setspawn nether_hub
 /spawn
+/spawn nether_hub
 /spawn Notch
+/spawn nether_hub Notch
+/delspawn nether_hub
 /stonespawn reload
 /stonespawn checkupdate
 ```
@@ -105,11 +118,12 @@ Commands you don't have permission for don't appear in tab-completion at all - `
 
 | Permission | Description | Default |
 |---|---|---|
-| `stonespawn.use` | Teleport yourself to spawn with `/spawn` | all players |
-| `stonespawn.admin` | Access to all admin actions: setspawn, teleporting others, reload, checkupdate, update notifications | `op` |
+| `stonespawn.use` | Teleport yourself to a spawn with `/spawn`, `/spawn <name>` or the GUI | all players |
+| `stonespawn.admin` | Access to all admin actions: setspawn, delspawn, teleporting others, reload, checkupdate, update notifications | `op` |
 | `stonespawn.bypass` | Bypasses both the `/spawn` cooldown and the teleport delay | `op` |
 | `stonespawn.bypass.cooldown` | Bypasses only the `/spawn` command cooldown | `op` |
 | `stonespawn.bypass.delay` | Bypasses only the teleport delay/countdown | `op` |
+| `stonespawn.elytra` | Glide and boost after jumping off a spawn island (only if `elytra.enabled` is on) | all players |
 
 `stonespawn.bypass` automatically grants both bypass permissions below it as well. For more targeted access — for example, skipping the cooldown but still going through the countdown — grant just that one permission.
 
@@ -121,7 +135,8 @@ Config files live in `plugins/StoneSpawn/`:
 
 - **`config.yml`** — settings *and* the countdown/arrival notification text, always in English, not affected by the language setting
 - **`languages/en/messages.yml`** and **`languages/de/messages.yml`** — general command feedback (help, errors, cooldown messages), fully editable per language
-- **`data.yml`** — stores the spawn location and which players have joined before; not meant to be edited by hand
+- **`gui.yml`** — the spawn selection GUI: title, rows, slots, items, texts and sounds
+- **`data.yml`** — stores the spawn locations and which players have joined before; not meant to be edited by hand
 
 After making changes, run `/stonespawn reload`.
 
@@ -143,7 +158,9 @@ The server console is always in English regardless of the configured language, d
 | `teleport.countdown` | Notification channel, all channel text, the countdown particle spiral, sound |
 | `teleport.arrival` | Notification channel, all channel text, the arrival particle effect, sound |
 | `teleport.bossbar` / `teleport.title` | Shared BossBar look and Title timing, used by both countdown and arrival |
-| `command.cooldown-seconds` | Cooldown for the manual `/spawn` command |
+| `command.cooldown-seconds` | Cooldown for the manual `/spawn` command (also applies to the GUI) |
+| `command.spawn-gui` | Whether `/spawn` opens the selection GUI when more than one spawn exists |
+| `elytra` | Gliding after jumping off a spawn island (off by default), radius, boost key and strength |
 | `worlds` | Whitelist/blacklist to restrict where the plugin is active |
 | `update-checker` | On/off and check interval (the Modrinth project itself is fixed in the plugin, not configurable) |
 
@@ -222,6 +239,34 @@ spawn:
 **Valid BossBar styles:** `PROGRESS`, `NOTCHED_6`, `NOTCHED_10`, `NOTCHED_12`, `NOTCHED_20`
 
 Common alternatives like `GOLD` or `SOLID` are automatically recognized and corrected.
+
+---
+
+## Multiple spawns & GUI
+
+`/setspawn` without a name sets the **main spawn**. `/setspawn <name>` adds further spawns (setting an existing name moves it). All automatic teleports (join, death, void, world change) always use the main spawn; the other spawns are reached with `/spawn <name>` or the GUI. The ambient particle ring is shown at every spawn.
+
+As soon as more than one spawn exists, `/spawn` opens a selection GUI instead of teleporting directly. Clicking a spawn runs the same teleport as the command (world restriction, cooldown, countdown). Switch the GUI off with `command.spawn-gui: false` - `/spawn` then always goes to the main spawn.
+
+Everything about the GUI lives in `gui.yml`: title, number of rows, the default look of every spawn item (material, name, lore, glow, item-model, placeholders `{spawn}` `{world}` `{x}` `{y}` `{z}`), per-spawn overrides with a fixed `slot` or `hidden: true`, the filler item, extra decoration items (optionally with `action: CLOSE`) and the open/click sounds.
+
+Existing single-spawn setups are converted automatically: the old spawn in `data.yml` becomes the main spawn on the first start of the new version.
+
+---
+
+## Elytra glide
+
+With `elytra.enabled: true`, a player who jumps or falls off the area around any spawn point (`elytra.radius`, default 50 blocks) starts gliding like with an elytra once they have fallen `elytra.min-fall-distance` blocks - no elytra item needed. The glide ends as soon as they land (ground, water, lava, ladders/vines) and starts again every time they jump off a spawn island. Fall and "flew into a wall" damage are cancelled while gliding and for 2 seconds after landing (`elytra.disable-damage`).
+
+While gliding, players can use a rocket boost into the direction they're looking (`elytra.boost`, default: once per glide). The boost key is configurable, but a server only receives a few keys from the game - freely chosen keys like `B` never reach the server. Available triggers:
+
+| `trigger` | Key |
+|---|---|
+| `SWAP_HAND` | `F` (the item swap is blocked while gliding) - default |
+| `SNEAK` | `Shift` |
+| `LEFT_CLICK` | Left mouse button |
+
+When the glide starts, the action bar shows which key to press (`elytra.boost-hint` in `messages.yml`, empty = off). The permission `stonespawn.elytra` (default: everyone) controls who can glide.
 
 ---
 

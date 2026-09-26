@@ -63,9 +63,12 @@ public class StoneSpawnCommand implements CommandExecutor, TabCompleter {
         mm.sendRaw(sender, "help.header", null);
         if (isAdmin) {
             mm.sendRaw(sender, "help.setspawn", null);
+            mm.sendRaw(sender, "help.setspawn-named", null);
+            mm.sendRaw(sender, "help.delspawn", null);
         }
         if (sender.hasPermission("stonespawn.use")) {
             mm.sendRaw(sender, "help.spawn", null);
+            mm.sendRaw(sender, "help.spawn-named", null);
         }
         if (isAdmin) {
             mm.sendRaw(sender, "help.reload", null);
