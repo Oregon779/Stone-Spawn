@@ -7,6 +7,9 @@ join/death/void/world-change teleports automatically - complete with a
 countdown, a spiral particle effect, sound, and fully configurable
 chat/actionbar/bossbar/title messages.
 
+The full documentation - every command, permission and setting explained -
+is in the [Wiki](WIKI.md).
+
 ## Features
 
 - `/setspawn` - set the server spawn point to your current location
