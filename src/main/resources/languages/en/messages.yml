@@ -72,3 +72,11 @@ elytra:
     swap-hand: "F"
     sneak: "Shift"
     left-click: "Left click"
+  # For Bedrock players, who start gliding themselves by jumping in mid-air. {key}
+  bedrock-hint: "&e✦ &7Press &bjump &7to glide, &b{key} &7for a rocket boost!"
+  # Used for Bedrock players when the boost is disabled.
+  bedrock-glide-hint: "&e✦ &7Press &bjump &7to glide!"
+  bedrock-keys:
+    swap-hand: "Swap hands"
+    sneak: "Sneak"
+    left-click: "Attack"

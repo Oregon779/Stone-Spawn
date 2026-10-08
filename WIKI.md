@@ -314,6 +314,7 @@ elytra:
   boost:
     enabled: true
     trigger: SWAP_HAND
+    bedrock-trigger: SNEAK   # Bedrock players (see below)
     uses-per-glide: 1        # 0 = unlimited
     strength: 1.5            # ~1.5 feels like a firework rocket
     sound: ENTITY_FIREWORK_ROCKET_LAUNCH
@@ -324,6 +325,18 @@ elytra:
 ```
 
 The action bar text is `elytra.boost-hint` in `messages.yml` (empty = no hint); the key names shown in it are under `elytra.keys`.
+
+**Bedrock players (Geyser/Floodgate)**
+
+Bedrock clients only glide while actually wearing an elytra - the server can't make them glide otherwise. StoneSpawn handles this automatically:
+
+- When a Bedrock player jumps off a spawn island, they get an **unbreakable elytra** in the chestplate slot. Their own chestplate is stored inside that elytra and **given back when they land**. A player who already wears a real elytra keeps it.
+- Bedrock players **start the glide themselves by pressing jump** in mid-air; the action bar tells them (`elytra.bedrock-hint`).
+- Bedrock has no key to swap items to the off hand, so they use `elytra.boost.bedrock-trigger` (default `SNEAK`) for the boost. The key names in their hint are under `elytra.bedrock-keys`.
+- The temporary elytra can't be taken out, dropped or swapped away by right-clicking another chestplate. On death, the stored chestplate drops instead of the elytra (unless it has Curse of Vanishing).
+- The chestplate also comes back when the player logs out mid-glide, when the plugin is disabled, and - after a server crash - on the player's next join.
+
+Bedrock players are recognized through the Floodgate or Geyser API if one of them is installed on the same server, otherwise by the UUID format Floodgate gives Bedrock players.
 
 > **Anti-cheat plugins:** gliding without an elytra item can look like a fly hack to anti-cheat plugins. If players get flagged or kicked while gliding, add an exemption for gliding in your anti-cheat.
 
@@ -400,7 +413,7 @@ All files are in `plugins/StoneSpawn/`. After changes, run `/stonespawn reload`.
 | `teleport.bossbar.*` / `teleport.title.*` | | Shared boss bar look and title timing |
 | `command.cooldown-seconds` | `10` | Cooldown between `/spawn` uses (also for the GUI) |
 | `command.spawn-gui` | `true` | Open the selection GUI when more than one spawn exists |
-| `elytra.*` | off | See [Elytra Glide](#elytra-glide) |
+| `elytra.*` | off | See [Elytra Glide](#elytra-glide), incl. `elytra.boost.bedrock-trigger` for Bedrock players |
 | `worlds.mode` | `NONE` | `NONE` = everywhere, `WHITELIST` = only in `worlds.list`, `BLACKLIST` = everywhere except `worlds.list` |
 | `worlds.list` | `[]` | World names (exact spelling) |
 | `update-checker.enabled` | `true` | Check Modrinth for new versions |
@@ -437,7 +450,7 @@ All files are in `plugins/StoneSpawn/`. After changes, run `/stonespawn reload`.
 | `{player}` | `general.player-not-found`, `spawn.teleported-other`, `spawn.teleported-by` |
 | `{spawn}` | `setspawn.success-named`, `setspawn.invalid-name`, `delspawn.success`, `spawn.not-found`; GUI items |
 | `{world}` `{x}` `{y}` `{z}` | GUI spawn items |
-| `{key}` | `elytra.boost-hint` |
+| `{key}` | `elytra.boost-hint`, `elytra.bedrock-hint` |
 | `{version}` `{current}` `{behind}` | `update.available` |
 | `{count}` | `update.versions-behind` |
 
@@ -527,6 +540,9 @@ Set `worlds.mode` to `WHITELIST` or `BLACKLIST` and list the world names under `
 
 **Why can't I use the `B` key for the elytra boost?**
 Minecraft doesn't send free keys to the server. Pick `SWAP_HAND` (F), `SNEAK` (Shift) or `LEFT_CLICK` - see [Elytra Glide](#elytra-glide).
+
+**Bedrock players fall instead of gliding.**
+Bedrock players have to press jump once in mid-air to open the elytra - that's how gliding starts on Bedrock. They get a temporary elytra for it automatically, see [Elytra Glide](#elytra-glide).
 
 **Players get kicked while gliding off the spawn island.**
 Most likely your anti-cheat flags gliding without an elytra item. Add an exemption for gliding there.

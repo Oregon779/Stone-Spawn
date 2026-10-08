@@ -1,12 +1,16 @@
 package dev.stonespawn.plugin.manager;
 
 import dev.stonespawn.plugin.StoneSpawn;
+import dev.stonespawn.plugin.model.BoostTrigger;
+import org.bukkit.Bukkit;
 import org.bukkit.GameMode;
 import org.bukkit.Location;
 import org.bukkit.Particle;
 import org.bukkit.Sound;
 import org.bukkit.World;
 import org.bukkit.entity.Player;
+import org.bukkit.event.entity.PlayerDeathEvent;
+import org.bukkit.inventory.ItemStack;
 
 import java.util.HashMap;
 import java.util.HashSet;
@@ -22,9 +26,12 @@ public class ElytraManager {
     private final Set<UUID> onSpawnIsland = new HashSet<>();
     private final Map<UUID, Integer> boostsUsedByGlider = new HashMap<>();
     private final Map<UUID, Long> damageGraceUntil = new HashMap<>();
+    private final BedrockDetector bedrock = new BedrockDetector();
+    private final TemporaryElytra temporaryElytra;
 
     public ElytraManager(StoneSpawn plugin) {
         this.plugin = plugin;
+        this.temporaryElytra = new TemporaryElytra(plugin);
     }
 
     public boolean isGliding(UUID uuid) {
@@ -68,7 +75,7 @@ public class ElytraManager {
             return false;
         }
         if (hasLanded(player)) {
-            end(id);
+            end(player);
             return false;
         }
         // Without a real elytra the server keeps adding up the whole descent as fall distance.
@@ -125,10 +132,44 @@ public class ElytraManager {
         stop(player);
     }
 
-    public void clear(UUID uuid) {
+    public void handleQuit(Player player) {
+        temporaryElytra.restore(player);
+        UUID uuid = player.getUniqueId();
         onSpawnIsland.remove(uuid);
         boostsUsedByGlider.remove(uuid);
         damageGraceUntil.remove(uuid);
+    }
+
+    /** Gives back a chestplate still stored in a temporary elytra, e.g. after a crash mid-glide. */
+    public void handleJoin(Player player) {
+        temporaryElytra.restore(player);
+    }
+
+    public void handleDeath(PlayerDeathEvent event) {
+        if (!event.getKeepInventory()) {
+            temporaryElytra.replaceInDrops(event.getDrops());
+        }
+        reset(event.getPlayer());
+    }
+
+    public void shutdown() {
+        for (Player player : Bukkit.getOnlinePlayers()) {
+            temporaryElytra.restore(player);
+        }
+        boostsUsedByGlider.clear();
+    }
+
+    public boolean isTemporaryElytra(ItemStack item) {
+        return temporaryElytra.isTemporary(item);
+    }
+
+    public boolean wearsTemporaryElytra(Player player) {
+        return temporaryElytra.isWorn(player);
+    }
+
+    public BoostTrigger boostTrigger(Player player) {
+        ConfigManager cfg = plugin.getConfigManager();
+        return bedrock.isBedrock(player) ? cfg.getBedrockBoostTrigger() : cfg.getBoostTrigger();
     }
 
     private void start(Player player) {
@@ -136,35 +177,49 @@ public class ElytraManager {
         onSpawnIsland.remove(id);
         damageGraceUntil.remove(id);
         boostsUsedByGlider.put(id, 0);
+        boolean bedrockPlayer = bedrock.isBedrock(player);
+        if (bedrockPlayer) {
+            temporaryElytra.equip(player);
+        }
         player.setGliding(true);
-        sendBoostHint(player);
+        sendGlideHint(player, bedrockPlayer);
     }
 
     private void stop(Player player) {
-        if (end(player.getUniqueId()) && player.isGliding()) {
+        if (end(player) && player.isGliding()) {
             player.setGliding(false);
         }
     }
 
-    private boolean end(UUID id) {
+    private boolean end(Player player) {
+        UUID id = player.getUniqueId();
         if (boostsUsedByGlider.remove(id) == null) {
             return false;
         }
         damageGraceUntil.put(id, System.currentTimeMillis() + LANDING_DAMAGE_GRACE_MILLIS);
+        temporaryElytra.restore(player);
         return true;
     }
 
-    private void sendBoostHint(Player player) {
+    // Bedrock clients start gliding themselves (jump in mid-air), so they get their own hint.
+    private void sendGlideHint(Player player, boolean bedrockPlayer) {
         ConfigManager cfg = plugin.getConfigManager();
-        if (!cfg.getBoolean("elytra.boost.enabled", true)) {
+        boolean boost = cfg.getBoolean("elytra.boost.enabled", true);
+        String path;
+        if (bedrockPlayer) {
+            path = boost ? "elytra.bedrock-hint" : "elytra.bedrock-glide-hint";
+        } else if (boost) {
+            path = "elytra.boost-hint";
+        } else {
             return;
         }
         MessageManager mm = plugin.getMessageManager();
-        String hint = mm.getRaw("elytra.boost-hint");
+        String hint = mm.getRaw(path);
         if (hint.isBlank()) {
             return;
         }
-        String key = mm.getRaw(cfg.getBoostTrigger().messageKey());
+        BoostTrigger trigger = bedrockPlayer ? cfg.getBedrockBoostTrigger() : cfg.getBoostTrigger();
+        String key = mm.getRaw(bedrockPlayer ? trigger.bedrockMessageKey() : trigger.messageKey());
         player.sendActionBar(mm.format(hint, Map.of("key", key)));
     }
 

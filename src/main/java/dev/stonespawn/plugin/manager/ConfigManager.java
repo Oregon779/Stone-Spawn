@@ -27,6 +27,7 @@ public class ConfigManager {
     private volatile double elytraRadius;
     private volatile double elytraMinFallDistance;
     private volatile BoostTrigger boostTrigger = BoostTrigger.SWAP_HAND;
+    private volatile BoostTrigger bedrockBoostTrigger = BoostTrigger.SNEAK;
 
     public ConfigManager(StoneSpawn plugin) {
         this.plugin = plugin;
@@ -56,6 +57,7 @@ public class ConfigManager {
         elytraRadius = Math.max(1.0, config.getDouble("elytra.radius", 50));
         elytraMinFallDistance = Math.max(1.5, config.getDouble("elytra.min-fall-distance", 4.0));
         boostTrigger = BoostTrigger.fromConfig(config.getString("elytra.boost.trigger", "SWAP_HAND"), BoostTrigger.SWAP_HAND);
+        bedrockBoostTrigger = BoostTrigger.fromConfig(config.getString("elytra.boost.bedrock-trigger", "SNEAK"), BoostTrigger.SNEAK);
     }
 
     public void reload() {
@@ -88,6 +90,10 @@ public class ConfigManager {
 
     public BoostTrigger getBoostTrigger() {
         return boostTrigger;
+    }
+
+    public BoostTrigger getBedrockBoostTrigger() {
+        return bedrockBoostTrigger;
     }
 
     public String getString(String path, String def) {

@@ -184,6 +184,12 @@ command:
 # island) start gliding like with an elytra - no elytra item needed. The
 # glide ends as soon as they land (ground, water, lava, ladders/vines) and
 # starts again every time they jump off a spawn island.
+#
+# Bedrock players (Geyser/Floodgate) can only glide while wearing a real
+# elytra, so they get an unbreakable one in the chestplate slot while
+# gliding - their own chestplate is stored inside it and given back when
+# they land (even after a server crash, on their next join). They start the
+# glide by pressing jump in mid-air.
 elytra:
   enabled: false
   # Radius in blocks around each spawn point that counts as its spawn island.
@@ -204,6 +210,9 @@ elytra:
     #   SNEAK       -> Shift
     #   LEFT_CLICK  -> left mouse button
     trigger: SWAP_HAND
+    # Bedrock has no key to swap items to the off hand, so Bedrock players
+    # use this trigger instead (SNEAK or LEFT_CLICK).
+    bedrock-trigger: SNEAK
     # How many boosts a player gets per glide. 0 = unlimited.
     uses-per-glide: 1
     # Launch speed into the looking direction. ~1.5 feels like a firework rocket.

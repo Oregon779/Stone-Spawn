@@ -17,6 +17,10 @@ public class TestPlayer extends PlayerMock {
         super(server, name);
     }
 
+    public TestPlayer(ServerMock server, String name, java.util.UUID uuid) {
+        super(server, name, uuid);
+    }
+
     @Override
     public CompletableFuture<Boolean> teleportAsync(Location location, PlayerTeleportEvent.TeleportCause cause,
                                                     TeleportFlag... flags) {

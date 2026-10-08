@@ -17,6 +17,14 @@ public enum BoostTrigger {
     }
 
     public String messageKey() {
-        return "elytra.keys." + name().toLowerCase().replace('_', '-');
+        return "elytra.keys." + keyName();
+    }
+
+    public String bedrockMessageKey() {
+        return "elytra.bedrock-keys." + keyName();
+    }
+
+    private String keyName() {
+        return name().toLowerCase().replace('_', '-');
     }
 }

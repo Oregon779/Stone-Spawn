@@ -38,7 +38,15 @@ public abstract class PluginTestBase {
     }
 
     protected TestPlayer addPlayer(String name) {
-        TestPlayer player = new TestPlayer(server, name);
+        return join(new TestPlayer(server, name));
+    }
+
+    /** A Bedrock player as Floodgate creates them for unlinked accounts (UUID with 64 leading zero bits). */
+    protected TestPlayer addBedrockPlayer(String name) {
+        return join(new TestPlayer(server, name, new java.util.UUID(0L, 2535400000000000L + name.hashCode())));
+    }
+
+    private TestPlayer join(TestPlayer player) {
         server.addPlayer(player);
         // Let the delayed first-join teleport finish before the test moves the player.
         server.getScheduler().performTicks(2);

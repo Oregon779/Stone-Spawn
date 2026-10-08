@@ -72,3 +72,11 @@ elytra:
     swap-hand: "F"
     sneak: "Shift"
     left-click: "Linksklick"
+  # Für Bedrock-Spieler, die das Gleiten selbst durch Springen in der Luft starten. {key}
+  bedrock-hint: "&e✦ &7Drücke &bSpringen &7zum Gleiten, &b{key} &7für einen Raketen-Boost!"
+  # Für Bedrock-Spieler, wenn der Boost ausgeschaltet ist.
+  bedrock-glide-hint: "&e✦ &7Drücke &bSpringen&7, um zu gleiten!"
+  bedrock-keys:
+    swap-hand: "Hand wechseln"
+    sneak: "Schleichen"
+    left-click: "Angreifen"

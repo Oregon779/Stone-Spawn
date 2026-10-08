@@ -5,6 +5,8 @@ api-version: '26.2'
 author: Stone Plugins
 description: Adds a configurable server spawn point with teleport countdown, particle and sound effects, and fully translatable messages.
 folia-supported: false
+# Optional: used to recognize Bedrock players for the elytra glide.
+softdepend: [floodgate, Geyser-Spigot]
 
 commands:
   setspawn:

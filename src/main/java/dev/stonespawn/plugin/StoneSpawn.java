@@ -84,6 +84,9 @@ public class StoneSpawn extends JavaPlugin {
         if (notificationManager != null) {
             notificationManager.hideAll();
         }
+        if (elytraManager != null) {
+            elytraManager.shutdown();
+        }
         if (spawnManager != null) {
             spawnManager.flush();
         }
