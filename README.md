@@ -72,8 +72,10 @@ Requires Paper (or a Paper fork) 26.2+ and Java 25. Not supported on Folia.
 - `plugins/StoneSpawn/data.yml` - stores the spawn locations and which
   players have joined before. Not meant to be edited by hand.
 
-Missing options are added automatically when the plugin updates; your
-existing settings are never overwritten, even in nested sections.
+Missing options are added automatically when the plugin updates, with
+their comments and at the right place. Your existing settings, comments
+and formatting are never changed, even in nested sections; renamed
+options keep your value, and a file with a typo is never overwritten.
 
 ## Permissions
 

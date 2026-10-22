@@ -1,6 +1,7 @@
 package dev.stonespawn.plugin.manager;
 
 import dev.stonespawn.plugin.StoneSpawn;
+import dev.stonespawn.plugin.config.ConfigSchema;
 import dev.stonespawn.plugin.config.ConfigUpdater;
 import dev.stonespawn.plugin.model.BoostTrigger;
 import dev.stonespawn.plugin.model.JoinMode;
@@ -9,7 +10,6 @@ import dev.stonespawn.plugin.model.WorldMode;
 import org.bukkit.configuration.file.YamlConfiguration;
 
 import java.io.File;
-import java.io.IOException;
 import java.util.List;
 
 public class ConfigManager {
@@ -34,21 +34,9 @@ public class ConfigManager {
     }
 
     public void load() {
-        configFile = new File(plugin.getDataFolder(), "config.yml");
-        if (!configFile.exists()) {
-            plugin.saveResource(RESOURCE_PATH, false);
-        }
-
-        try {
-            ConfigUpdater.UpdateResult result = ConfigUpdater.update(plugin, RESOURCE_PATH, configFile);
-            if (result.addedKeys() > 0) {
-                plugin.getLogger().info("Added " + result.addedKeys() + " new option(s) to config.yml");
-            }
-        } catch (IOException ex) {
-            plugin.getLogger().warning("Failed to update config.yml: " + ex.getMessage());
-        }
-
-        config = YamlConfiguration.loadConfiguration(configFile);
+        configFile = new File(plugin.getDataFolder(), RESOURCE_PATH);
+        // Migrates and completes the file first, so every value below is read from the up-to-date layout.
+        config = ConfigUpdater.load(plugin, RESOURCE_PATH, configFile, ConfigSchema.CONFIG);
 
         voidTeleportEnabled = config.getBoolean("spawn.void.enabled", false);
         voidHeight = config.getDouble("spawn.void.height", -64);

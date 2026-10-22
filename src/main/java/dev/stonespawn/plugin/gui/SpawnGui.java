@@ -1,6 +1,7 @@
 package dev.stonespawn.plugin.gui;
 
 import dev.stonespawn.plugin.StoneSpawn;
+import dev.stonespawn.plugin.config.ConfigSchema;
 import dev.stonespawn.plugin.config.ConfigUpdater;
 import dev.stonespawn.plugin.manager.SpawnManager;
 import net.kyori.adventure.text.Component;
@@ -19,7 +20,6 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 
 import java.io.File;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -42,18 +42,7 @@ public class SpawnGui {
 
     public void load() {
         File file = new File(plugin.getDataFolder(), RESOURCE_PATH);
-        if (!file.exists()) {
-            plugin.saveResource(RESOURCE_PATH, false);
-        }
-        try {
-            ConfigUpdater.UpdateResult result = ConfigUpdater.update(plugin, RESOURCE_PATH, file);
-            if (result.addedKeys() > 0) {
-                plugin.getLogger().info("Added " + result.addedKeys() + " new option(s) to gui.yml");
-            }
-        } catch (IOException ex) {
-            plugin.getLogger().warning("Failed to update gui.yml: " + ex.getMessage());
-        }
-        gui = YamlConfiguration.loadConfiguration(file);
+        gui = ConfigUpdater.load(plugin, RESOURCE_PATH, file, ConfigSchema.GUI);
     }
 
     public void open(Player player) {

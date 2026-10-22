@@ -1,6 +1,7 @@
 package dev.stonespawn.plugin.manager;
 
 import dev.stonespawn.plugin.StoneSpawn;
+import dev.stonespawn.plugin.config.ConfigSchema;
 import dev.stonespawn.plugin.config.ConfigUpdater;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.minimessage.MiniMessage;
@@ -97,17 +98,7 @@ public class MessageManager {
             }
         }
 
-        try {
-            ConfigUpdater.UpdateResult result = ConfigUpdater.update(plugin, resourcePath, file);
-            if (result.addedKeys() > 0) {
-                plugin.getLogger().info("Added " + result.addedKeys()
-                        + " new message key(s) to languages/" + lang + "/messages.yml");
-            }
-        } catch (IOException ex) {
-            plugin.getLogger().warning("Failed to update messages for '" + lang + "': " + ex.getMessage());
-        }
-
-        languageCache.put(lang, YamlConfiguration.loadConfiguration(file));
+        languageCache.put(lang, ConfigUpdater.load(plugin, resourcePath, file, ConfigSchema.MESSAGES));
     }
 
     public String getRaw(String path) {

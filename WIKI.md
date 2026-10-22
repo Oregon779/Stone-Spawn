@@ -89,7 +89,19 @@ Updating is a file swap:
 3. Put the new jar in.
 4. Start the server.
 
-Your settings are kept. On startup, StoneSpawn checks `config.yml`, `gui.yml` and every `messages.yml` for options that were added in the new version and adds only those, **including their explanation comments**. Existing values are never overwritten or deleted.
+Your settings are kept. On every start and on `/stonespawn reload`, StoneSpawn brings `config.yml`, `gui.yml` and every bundled `messages.yml` up to date **before** it reads them:
+
+- **New options are added** with their default value and their explanation comments, at the same place where they are in a fresh file (e.g. a new option in `elytra.boost` lands inside `elytra.boost`, next to its neighbours).
+- **Your values are never overwritten or reset**, also not in nested sections. Options you deleted on purpose come back with their default, because the plugin needs a value for them.
+- **The rest of the file is not touched.** Your own comments, quotes, blank lines and list style stay exactly as you wrote them; only the new lines are inserted. (Only if a new option has to go into a section you wrote in one line, like `boost: {enabled: true}`, the file is saved in the standard layout instead - values and comments are kept.)
+- **Your own entries in `gui.yml`** (`spawns` and `items`) are never changed or extended.
+- **Renamed or moved options** are carried over: `config.yml` ends with `config-version`, and when a new version renames an option, your value is moved to the new name automatically. Before that, the old file is saved next to it as `config.yml.v<old version>-<timestamp>.bak`.
+
+Nothing is ever written to a file that can't be read safely:
+
+- **A file with a YAML error** (e.g. a tab instead of spaces, a missing quote) is left exactly as it is. The console shows the error with its line number, and StoneSpawn uses the default values of that file until you fix it and run `/stonespawn reload`.
+- **A file from a newer StoneSpawn version** (after a downgrade) is left as it is; missing values are taken from the defaults.
+- **A file not saved as UTF-8** is left as it is (so no special characters get damaged); save it as UTF-8 to get new options added.
 
 Things worth knowing when coming from older versions:
 
@@ -418,6 +430,7 @@ All files are in `plugins/StoneSpawn/`. After changes, run `/stonespawn reload`.
 | `worlds.list` | `[]` | World names (exact spelling) |
 | `update-checker.enabled` | `true` | Check Modrinth for new versions |
 | `update-checker.check-interval-minutes` | `60` | Time between checks, minimum 5 |
+| `config-version` | | Layout version of the file, used to carry settings over when options are renamed. Don't change it - see [Updating](#updating) |
 
 **Other files**
 
@@ -503,7 +516,10 @@ To measure the real impact on your server, use the [spark](https://spark.lucko.m
 ## FAQ and Troubleshooting
 
 **Will I lose my settings when updating?**
-No. New versions only add missing options (with their comments); existing values are never changed. See [Updating](#updating).
+No. New versions only add missing options (with their comments) and leave the rest of the file as you wrote it; existing values are never changed, and renamed options keep your value. See [Updating](#updating).
+
+**I made a typo in `config.yml` and now all settings are back to default.**
+Your file is safe: StoneSpawn never overwrites a file it can't read. The console shows `config.yml contains an error and was left unchanged` with the line number. Fix that line (YAML uses spaces, never tabs) and run `/stonespawn reload`.
 
 **Why does `/spawn` open a menu instead of teleporting?**
 There is more than one spawn. Set `command.spawn-gui: false` to always go to the main spawn, or delete spawns you don't need with `/delspawn`.
@@ -573,3 +589,10 @@ mvn package
 ```
 
 The plugin jar is created as `target/StoneSpawn-<version>.jar`. The build also runs the automated tests (JUnit and MockBukkit); `mvn package -DskipTests` skips them. The Paper API is downloaded from `repo.papermc.io`, the test libraries from Maven Central.
+
+**Adding or changing options**
+
+- A **new option** only needs to be added to the bundled file (`src/main/resources/config.yml`, `gui.yml` or `languages/*/messages.yml`), with its comment. Existing servers get it on their next start - no migration code is needed.
+- When an existing option is **renamed, moved, removed or changes its meaning**, raise `config-version` at the end of the bundled file by one and add the matching step in `ConfigSchema` (`dev.stonespawn.plugin.config`), for example `ConfigMigration.to(2).move("teleport.delay", "teleport.delay-seconds")`. Steps can also `remove(path)` or do anything else with `custom(...)`. `gui.yml` and the message files can start using `config-version` the same way at any time; a file without it counts as version 1.
+- Sections whose entries belong to the server owner (like `spawns` and `items` in `gui.yml`) are listed in `ConfigSchema` too, so bundled examples are never pushed into them.
+- The tests check that every bundled `config-version` matches its last migration step.

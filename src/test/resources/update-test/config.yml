@@ -1,0 +1,6 @@
+# Bundled file of a made-up version 2, in which teleport.delay was renamed.
+teleport:
+  # Seconds before teleporting.
+  delay-seconds: 3
+
+config-version: 2

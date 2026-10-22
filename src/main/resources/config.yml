@@ -18,8 +18,11 @@
 # per-language instead, in:
 #   plugins/StoneSpawn/languages/<language>/messages.yml
 #
-# Missing options are added automatically on plugin updates. Existing
-# values you changed are never overwritten, even in nested sections.
+# Missing options are added automatically on plugin updates, right where
+# they belong and with their explanation. Existing values you changed are
+# never overwritten, even in nested sections, and your own comments and
+# formatting stay as they are. If an option is renamed in a later version,
+# your value is moved to the new name and the old file is kept as a backup.
 # =====================================================================
 
 # Language used for general command feedback. Must match a folder under
@@ -239,3 +242,7 @@ worlds:
 update-checker:
   enabled: true
   check-interval-minutes: 60
+
+# Layout version of this file, used to carry your settings over when an
+# option is renamed or moved in a plugin update. Do not change it.
+config-version: 1

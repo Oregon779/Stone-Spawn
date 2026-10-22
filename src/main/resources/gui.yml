@@ -16,7 +16,8 @@
 #   item-model (e.g. "myserver:spawn_icon", for resource packs)
 #
 # Missing options are added automatically on plugin updates. Existing
-# values you changed are never overwritten.
+# values you changed are never overwritten, and your own entries under
+# "spawns" and "items" are never touched.
 # =====================================================================
 
 title: "&8Choose a spawn"
