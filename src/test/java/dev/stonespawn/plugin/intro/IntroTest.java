@@ -171,7 +171,9 @@ class IntroTest extends PluginTestBase {
         assertTrue(near(bedrock.getLocation(), tower));
 
         server.getScheduler().performTicks(25);
-        assertTrue(near(bedrock.getLocation(), market), "jumps right after the stay, without a flight");
+        assertTrue(near(bedrock.getLocation(), tower), "stays for the time the flight would take");
+        server.getScheduler().performTicks(20);
+        assertTrue(near(bedrock.getLocation(), market), "then jumps, without a flight");
 
         server.getScheduler().performTicks(WHOLE_INTRO_TICKS);
         assertEquals(GameMode.SURVIVAL, bedrock.getGameMode());

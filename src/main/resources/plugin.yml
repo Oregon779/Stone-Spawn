@@ -1,5 +1,5 @@
 name: StoneSpawn
-version: '1.1.0-dev2'
+version: '1.1.0-dev3'
 main: dev.stonespawn.plugin.StoneSpawn
 api-version: '26.2'
 author: Stone Plugins

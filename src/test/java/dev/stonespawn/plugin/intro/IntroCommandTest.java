@@ -52,7 +52,8 @@ class IntroCommandTest extends PluginTestBase {
 
         admin.teleport(new Location(world, 12.5, 80, -3.25, 0f, 0f));
         admin.performCommand("stonespawn intro addpoint tower");
-        assertEquals(withTitle.replace("    x: 10.5\n", "    x: 12.5\n").replace(view, "    yaw: 0.0\n    pitch: 0.0\n"),
+        assertEquals(withTitle.replace("  tower:\n    world: \"world\"\n    x: 10.5\n", "  tower:\n    world: \"world\"\n    x: 12.5\n")
+                        .replace(view, "    yaw: 0.0\n    pitch: 0.0\n"),
                 introFile(), "moving a point keeps its texts");
 
         admin.performCommand("stonespawn intro removepoint tower");
@@ -80,7 +81,7 @@ class IntroCommandTest extends PluginTestBase {
                 "[StoneSpawn] ✖ There is no camera point called nowhere.",
                 "[StoneSpawn] ✖ a.b is not a valid name. Allowed are a-z, 0-9, _ and - (max. 32 characters).",
                 "[StoneSpawn] ✖ Player Nobody not found.",
-                "[StoneSpawn] ✖ Usage: /stonespawn intro <play [player]|addpoint <name>|removepoint <name>|list>"),
+                "[StoneSpawn] ✖ Usage: /stonespawn intro <play [player]|addpoint <name>|removepoint <name>|lookat <name> [clear]|list|preview>"),
                 messages(admin));
 
         admin.teleport(new Location(world, 1.5, 70, 2.5));
@@ -115,7 +116,7 @@ class IntroCommandTest extends PluginTestBase {
 
         TestPlayer admin = addAdmin("Admin");
         admin.performCommand("stonespawn intro addpoint tower");
-        assertEquals(List.of("play", "addpoint", "removepoint", "list"),
+        assertEquals(List.of("play", "addpoint", "removepoint", "lookat", "list", "preview"),
                 plugin.getCommand("stonespawn").tabComplete(admin, "stonespawn", new String[]{"intro", ""}));
         assertEquals(List.of("tower"),
                 plugin.getCommand("stonespawn").tabComplete(admin, "stonespawn", new String[]{"intro", "removepoint", "t"}));

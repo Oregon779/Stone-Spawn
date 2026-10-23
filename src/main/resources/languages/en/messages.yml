@@ -95,7 +95,7 @@ elytra:
 intro:
   # Shown in the action bar while the intro runs, if it can be skipped.
   skip-hint: "&7Press &fShift &7to skip the intro"
-  usage: "&c✖ Usage: &f/stonespawn intro <play [player]|addpoint <name>|removepoint <name>|list>"
+  usage: "&c✖ Usage: &f/stonespawn intro <play [player]|addpoint <name>|removepoint <name>|lookat <name> [clear]|list|preview>"
   # {player}
   playing: "&a✔ Playing the intro for &b{player}&a."
   # {player}
@@ -115,3 +115,14 @@ intro:
   # {number} {point} {world} {x} {y} {z}
   list-entry: "&8{number}. &b{point} &7- {world} {x}, {y}, {z}"
   list-empty: "&7The intro has no camera points yet."
+  save-failed: "&c✖ intro.yml could not be saved - see the console for why."
+  # {point} {x} {y} {z}
+  lookat-set: "&a✔ Camera point &b{point} &anow keeps looking at the block at &f{x}, {y}, {z}&a."
+  # {point}
+  lookat-cleared: "&a✔ Camera point &b{point} &alooks in its saved direction again."
+  # {range}
+  lookat-no-block: "&c✖ Look at a block (up to {range} blocks away) to choose what the camera looks at."
+  # {point} {world}
+  lookat-other-world: "&c✖ Camera point &f{point} &cis in the world &f{world}&c - go there first."
+  preview-shown: "&a✔ Showing the camera path for 60 seconds: &bblue &a= flight, &egold &a= points, &2green &a= look-at targets. Run the command again to hide it."
+  preview-hidden: "&7Camera path hidden."

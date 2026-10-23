@@ -36,7 +36,7 @@ StoneSpawn lets you:
 
 - set the spawn point with one command (centered on the block you're standing on)
 - create **several named spawns**, rename them, and let players pick one with `/spawn <name>` or a **fully customizable selection GUI**
-- welcome new players with a **first-join intro**: a camera flight over your spawn with titles, chat lines and sounds, followed by a book with your rules
+- welcome new players with a **cinematic first-join intro**: a smooth camera flight over your spawn with orbits around your buildings, typed subtitles, a progress bar, music, its own time of day and weather, rewards and a book with your rules
 - teleport yourself, or another player, to a spawn with `/spawn`
 - run a **teleport countdown** with a colored particle spiral and a sound that rises in pitch, cancelled when the player moves
 - automatically teleport players to spawn **on join** (always, first join only, or never), **on death**, **when falling into the void** or **on world change**
@@ -141,7 +141,9 @@ Base command: `/stonespawn` (aliases: `/sp`, `/ss`)
 | `/stonespawn checkupdate` | Checks Modrinth for a new version right now | `stonespawn.admin` |
 | `/stonespawn intro addpoint <name>` | Adds a camera point for the [first-join intro](#first-join-intro) at your eyes and view, or moves an existing one there | `stonespawn.admin` |
 | `/stonespawn intro removepoint <name>` | Removes a camera point | `stonespawn.admin` |
+| `/stonespawn intro lookat <name>` | The camera keeps looking at the block you are looking at, at this point (`lookat <name> clear` removes it) | `stonespawn.admin` |
 | `/stonespawn intro list` | Lists the camera points in the order the camera visits them | `stonespawn.admin` |
+| `/stonespawn intro preview` | Shows the camera path as particles, only to you, for 60 seconds (run again to hide) | `stonespawn.admin` |
 | `/stonespawn intro play [player]` | Plays the intro for you or another player (also while it is switched off, for testing) | `stonespawn.admin` |
 | `/stonespawn help` | Shows the commands you are allowed to use | everyone |
 
@@ -365,21 +367,64 @@ Bedrock players are recognized through the Floodgate or Geyser API if one of the
 
 ## First-Join Intro
 
-Players who join the server for the **very first time** can get a short intro: the camera flies over your spawn from point to point, every point shows its own title, chat lines and sound, and at the end the player is back where the intro started and a **book** with your welcome text or rules opens. Everything is set up in `intro.yml`. The intro is **off by default** (`enabled: false`).
+Players who join the server for the **very first time** can get a cinematic intro: the camera flies over your spawn like a drone, every point shows its own title, chat lines and sound, a bar at the top shows the chapter and the progress, and at the end the player is back where the intro started and a **book** with your welcome text or rules opens. Everything is set up in `intro.yml`. The intro is **off by default** (`enabled: false`).
 
 **Setting it up**
 
 1. Fly to where the camera should be and look where it should look.
 2. `/stonespawn intro addpoint <name>` - the camera point is saved at your eyes, with your view. Repeat for every point; the camera visits them in this order. Using an existing name moves that point (its texts stay).
-3. Add the texts for each point in `intro.yml` (see below) and run `/stonespawn reload`.
-4. Watch it with `/stonespawn intro play`, then set `enabled: true`.
+3. Optional: look at a building and run `/stonespawn intro lookat <name>` - the camera then keeps looking at that block while it flies to the point and while it stays there.
+4. `/stonespawn intro preview` shows the whole camera path as particles, only to you, for 60 seconds: **blue** = the flight, **gold** = the points, **green** = look-at targets. Run it again to hide it.
+5. Add the texts for each point in `intro.yml` (see below) and run `/stonespawn reload`.
+6. Watch it with `/stonespawn intro play`, then set `enabled: true`.
+
+**Camera**
+
+- `path: CURVE` flies one smooth curve through all points, like a camera drone; `STRAIGHT` uses straight lines.
+- The camera starts and stops gently at every point with a stay time. A point with `stay-seconds: 0` is **flown through** without slowing down - the speed stays even across it, so several such points make one long, smooth shot.
+- `look-at` makes the camera keep a building in view: while flying, the view turns smoothly from one target (or saved view) to the next.
+- `orbit-degrees` lets the camera **circle** around the point's look-at target while it stays there (e.g. `90`, or `360` for a full circle; negative = the other way). Without a look-at target it circles around the spot 10 blocks in front of it.
+- Points in another world are reached with a cut instead of a flight.
+
+**Atmosphere and extras**
+
+- **Typewriter subtitles:** subtitles appear letter by letter, with a soft typing sound (`typewriter`).
+- **Boss bar:** shows the chapter of the current point (`chapter`, default: its title) and fills up as the intro goes on (`bossbar`).
+- **Time and weather:** `time` and `weather` at the top set what the viewer sees at the start; every point can change them. The time of day shifts smoothly during the flight (sunset to night like a time-lapse). Only the viewer sees it - the world and other players are not affected - and it is reset at the end.
+- **Music:** `music.sound` plays during the whole intro and stops at the end - a vanilla sound like `MUSIC_DISC_RELIC` or a resource pack sound like `myserver:intro`. It plays in the music category, so players who turned music off don't hear it.
+- **Commands:** a point's `commands` run (as console) when the camera arrives there. `end-commands` run when the intro ends - also when it was skipped - e.g. to give a starter kit. They only run for the automatic first-join intro, never for `/stonespawn intro play`, so rewards are given only once. `{player}` is replaced with the player's name.
 
 ```yaml
 enabled: true
-skippable: true          # Shift ends the intro early (the player still gets the book)
+skippable: true          # Shift ends the intro early (the player still gets the book and the rewards)
 start-delay-ticks: 40    # wait after joining, so the world has loaded (20 ticks = 1 second)
+path: CURVE              # or STRAIGHT
 fly-seconds: 4.0         # default flight time from one point to the next
-stay-seconds: 3.0        # default time the camera stays at a point
+stay-seconds: 3.0        # default time the camera stays at a point (0 = fly through)
+
+typewriter:
+  enabled: true
+  ticks-per-letter: 1
+  sound: BLOCK_NOTE_BLOCK_HAT   # "" = silent
+  sound-volume: 0.3
+  sound-pitch: 1.8
+
+bossbar:
+  enabled: true
+  text: "{chapter}"      # also {percent} and {player}
+  color: WHITE
+  style: PROGRESS
+
+music:
+  sound: MUSIC_DISC_RELIC
+  volume: 1.0
+  pitch: 1.0
+
+time: noon               # ticks (0-24000) or sunrise, day, noon, sunset, night, midnight; "" = the world's
+weather: clear           # clear or rain; "" = the world's
+
+end-commands:
+  - "give {player} minecraft:bread 16"
 
 points:
   welcome:               # world, x, y, z, yaw, pitch come from /stonespawn intro addpoint
@@ -391,12 +436,27 @@ points:
     pitch: 20.0
     title: "&b&lWelcome, {player}!"
     subtitle: "&7to our server"
+    chapter: "&bWelcome"
     chat:
       - "&7This is where every adventure starts."
     sound: ENTITY_PLAYER_LEVELUP
-    sound-volume: 1.0
-    sound-pitch: 1.0
-    stay-seconds: 5.0    # optional, overrides the default for this point
+    stay-seconds: 5.0
+  townhall:
+    world: world
+    x: 40.5
+    y: 85.0
+    z: -12.5
+    yaw: 90.0
+    pitch: 15.0
+    look-at:             # set with /stonespawn intro lookat townhall
+      x: 60.5
+      y: 75.5
+      z: -12.5
+    orbit-degrees: 120
+    time: sunset
+    title: "&6The town hall"
+    commands:
+      - "playsound minecraft:block.bell.use master {player}"
 
 book:
   enabled: true
@@ -412,18 +472,18 @@ Texts support `&` codes, hex colors, MiniMessage and the placeholder `{player}`.
 
 - It starts `start-delay-ticks` after the first join, and only after the first-join teleport (see `spawn.join.mode`) has arrived. With `FIRST_JOIN` or `ALWAYS`, the intro therefore starts and ends at the main spawn; with `NEVER`, where the player joined.
 - During the intro the player is in spectator mode, invisible to others and can't be hurt. Their game mode is given back at the end.
-- The camera stays still at each point while its texts show, then glides smoothly to the next one. Points in another world are reached with a cut instead of a flight.
-- **Bedrock players** (Geyser/Floodgate) can't follow a flying camera, so they jump from point to point instead and see the same texts.
+- **Bedrock players** (Geyser/Floodgate) can't follow a flying camera, so they jump from point to point instead, looking at the point's target, and stay at each point for its stay time plus the flight time to the next one. Texts, typewriter, boss bar, time, weather, music and commands work the same.
 - Only players who are **new to the server** get it - players who already played before StoneSpawn was installed don't.
-- Without camera points, new players only get the book.
+- Without camera points, new players only get the book (and the `end-commands`).
 
 **Safety**
 
-- Logging out or a server stop never leaves a player in spectator mode: they are brought back right away. If the server crashes mid-intro, this happens on their next join. `/stonespawn reload` doesn't interrupt a running intro.
-- If another plugin or an admin teleports the player or changes their game mode during the intro, the intro ends and that teleport or game mode wins.
+- Logging out or a server stop never leaves a player in spectator mode: they are brought back right away. If the server crashes mid-intro, this happens on their next join. If the place they would return to is gone (its world was unloaded), they land at the main spawn. `/stonespawn reload` doesn't interrupt a running intro.
+- If another plugin or an admin teleports the player or changes their game mode during the intro, the intro ends and that teleport or game mode wins. The world-change teleport (`spawn.world-change`) leaves intro viewers alone.
 - The camera is an invisible entity that is never saved with the world.
+- A personal time or weather set by another plugin before the intro is kept if the intro doesn't change it.
 
-`/stonespawn intro addpoint` and `removepoint` only change the lines of that point in `intro.yml` - your texts, comments and formatting stay as they are.
+`/stonespawn intro addpoint`, `removepoint` and `lookat` only change the lines of that point in `intro.yml` - your texts, comments and formatting stay as they are. If `intro.yml` contains an error, they say so instead of pretending to have saved.
 
 ---
 

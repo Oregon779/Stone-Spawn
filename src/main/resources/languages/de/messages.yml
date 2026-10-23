@@ -95,7 +95,7 @@ elytra:
 intro:
   # Wird während des Intros in der Actionbar angezeigt, wenn es übersprungen werden kann.
   skip-hint: "&7Drücke &fShift&7, um das Intro zu überspringen"
-  usage: "&c✖ Benutzung: &f/stonespawn intro <play [Spieler]|addpoint <Name>|removepoint <Name>|list>"
+  usage: "&c✖ Benutzung: &f/stonespawn intro <play [Spieler]|addpoint <Name>|removepoint <Name>|lookat <Name> [clear]|list|preview>"
   # {player}
   playing: "&a✔ Das Intro wird für &b{player} &aabgespielt."
   # {player}
@@ -115,3 +115,14 @@ intro:
   # {number} {point} {world} {x} {y} {z}
   list-entry: "&8{number}. &b{point} &7- {world} {x}, {y}, {z}"
   list-empty: "&7Das Intro hat noch keine Kamerapunkte."
+  save-failed: "&c✖ intro.yml konnte nicht gespeichert werden - den Grund findest du in der Konsole."
+  # {point} {x} {y} {z}
+  lookat-set: "&a✔ Kamerapunkt &b{point} &aschaut jetzt immer auf den Block bei &f{x}, {y}, {z}&a."
+  # {point}
+  lookat-cleared: "&a✔ Kamerapunkt &b{point} &aschaut wieder in die gespeicherte Richtung."
+  # {range}
+  lookat-no-block: "&c✖ Schau einen Block an (bis {range} Blöcke entfernt), um festzulegen, wohin die Kamera schaut."
+  # {point} {world}
+  lookat-other-world: "&c✖ Kamerapunkt &f{point} &cliegt in der Welt &f{world}&c - geh zuerst dorthin."
+  preview-shown: "&a✔ Der Kameraweg wird 60 Sekunden lang angezeigt: &bblau &a= Flug, &egold &a= Punkte, &2grün &a= Blickziele. Führe den Befehl erneut aus, um ihn auszublenden."
+  preview-hidden: "&7Kameraweg ausgeblendet."

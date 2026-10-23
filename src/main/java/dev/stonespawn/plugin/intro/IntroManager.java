@@ -9,13 +9,17 @@ import net.kyori.adventure.text.Component;
 import org.bukkit.Bukkit;
 import org.bukkit.GameMode;
 import org.bukkit.Location;
+import org.bukkit.Color;
 import org.bukkit.NamespacedKey;
+import org.bukkit.Particle;
 import org.bukkit.World;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
 import org.bukkit.persistence.PersistentDataContainer;
 import org.bukkit.persistence.PersistentDataType;
+import org.bukkit.scheduler.BukkitTask;
+import org.bukkit.util.Vector;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -38,12 +42,21 @@ public class IntroManager {
     private static final String RESOURCE_PATH = "intro.yml";
     private static final int JOIN_TELEPORT_RETRIES = 20;
     private static final long JOIN_TELEPORT_RETRY_TICKS = 10L;
+    private static final int PREVIEW_SECONDS = 60;
+    private static final long PREVIEW_REFRESH_TICKS = 10L;
+    // Enough dots for a smooth line without flooding the viewer with particles on long intros.
+    private static final int PREVIEW_MAX_DOTS = 400;
+    private static final Particle.DustOptions PATH_DUST = new Particle.DustOptions(Color.fromRGB(85, 198, 255), 0.8f);
+    private static final Particle.DustOptions POINT_DUST = new Particle.DustOptions(Color.fromRGB(255, 200, 40), 2.0f);
+    private static final Particle.DustOptions TARGET_DUST = new Particle.DustOptions(Color.fromRGB(90, 255, 120), 2.0f);
 
     private final StoneSpawn plugin;
     private final NamespacedKey gameModeKey;
     private final NamespacedKey returnKey;
     private final Map<UUID, IntroSession> sessions = new HashMap<>();
     private final Set<UUID> returning = new HashSet<>();
+    private final Map<UUID, BukkitTask> previews = new HashMap<>();
+    private final Set<String> reportedPoints = new HashSet<>();
     private YamlConfiguration intro;
 
     public IntroManager(StoneSpawn plugin) {
@@ -54,6 +67,7 @@ public class IntroManager {
 
     public void load() {
         intro = ConfigUpdater.load(plugin, RESOURCE_PATH, file(), ConfigSchema.INTRO);
+        reportedPoints.clear();
     }
 
     private File file() {
@@ -78,13 +92,19 @@ public class IntroManager {
             }
             if (retries > 0 && plugin.getTeleportManager().isTeleporting(player.getUniqueId())) {
                 startAfterJoin(player, JOIN_TELEPORT_RETRY_TICKS, retries - 1);
-            } else if (start(player) == StartResult.NO_POINTS) {
+            } else if (start(player, true) == StartResult.NO_POINTS) {
                 openBook(player);
+                runCommands(intro.getStringList("end-commands"), player);
             }
         }, delay);
     }
 
+    /** Plays the intro for a player, e.g. to test it; rewards in end-commands are only given on the first join. */
     public StartResult start(Player player) {
+        return start(player, false);
+    }
+
+    private StartResult start(Player player, boolean firstJoin) {
         if (sessions.containsKey(player.getUniqueId())) {
             return StartResult.ALREADY_RUNNING;
         }
@@ -92,8 +112,9 @@ public class IntroManager {
         if (points.isEmpty()) {
             return StartResult.NO_POINTS;
         }
-        IntroSession session = new IntroSession(plugin, this, player, points,
-                plugin.getBedrockDetector().isBedrock(player), intro.getBoolean("skippable", true));
+        boolean jumpOnly = plugin.getBedrockDetector().isBedrock(player);
+        IntroPath path = new IntroPath(points, curved(), jumpOnly, IntroPoint.parseTime(intro.getString("time", "")));
+        IntroSession session = new IntroSession(plugin, this, player, path, intro, jumpOnly, firstJoin);
         sessions.put(player.getUniqueId(), session);
         PersistentDataContainer data = player.getPersistentDataContainer();
         data.set(gameModeKey, PersistentDataType.STRING, player.getGameMode().name());
@@ -124,6 +145,9 @@ public class IntroManager {
                         returning.remove(id);
                         restoreGameMode(player);
                         openBook(player);
+                        if (session.firstJoin()) {
+                            runCommands(intro.getStringList("end-commands"), player);
+                        }
                     });
                 });
             }
@@ -169,6 +193,8 @@ public class IntroManager {
     }
 
     public void shutdown() {
+        previews.values().forEach(BukkitTask::cancel);
+        previews.clear();
         for (UUID id : List.copyOf(sessions.keySet())) {
             Player player = Bukkit.getPlayer(id);
             if (player != null) {
@@ -226,7 +252,9 @@ public class IntroManager {
             ConfigurationSection spec = section.getConfigurationSection(name);
             IntroPoint point = spec == null ? null : IntroPoint.read(name, spec, fly, stay);
             if (point == null) {
-                plugin.getLogger().warning("Intro point '" + name + "' is skipped: its world isn't loaded.");
+                if (reportedPoints.add(name)) {
+                    plugin.getLogger().warning("Intro point '" + name + "' is skipped: its world isn't loaded.");
+                }
                 continue;
             }
             points.add(point);
@@ -257,8 +285,8 @@ public class IntroManager {
         return result;
     }
 
-    /** Saves a camera point at the given eye position and view; returns false if it only moved an existing point. */
-    public boolean setPoint(String name, Location eye) {
+    /** Saves a camera point at the given eye position and view (moving it if it exists; its texts stay). */
+    public PointResult setPoint(String name, Location eye) {
         boolean added = !pointNames().contains(name);
         Map<String, Object> values = new LinkedHashMap<>();
         values.put("world", eye.getWorld().getName());
@@ -267,9 +295,39 @@ public class IntroManager {
         values.put("z", round(eye.getZ(), 100));
         values.put("yaw", round(Location.normalizeYaw(eye.getYaw()), 10));
         values.put("pitch", round(eye.getPitch(), 10));
-        ConfigUpdater.setValues(plugin, file(), "points." + name, values);
+        if (!ConfigUpdater.setValues(plugin, file(), "points." + name, values)) {
+            return PointResult.SAVE_FAILED;
+        }
         load();
-        return added;
+        return added ? PointResult.ADDED : PointResult.MOVED;
+    }
+
+    /** The world a point was saved in, or null if there is no such point. */
+    public String pointWorld(String name) {
+        return pointNames().contains(name) ? intro.getString("points." + name + ".world", "") : null;
+    }
+
+    /** Makes the camera keep looking at {@code target} at this point (null: back to the saved view). */
+    public PointResult setLookAt(String name, Vector target) {
+        if (!pointNames().contains(name)) {
+            return PointResult.NOT_FOUND;
+        }
+        String path = "points." + name + ".look-at";
+        boolean saved;
+        if (target == null) {
+            saved = !intro.contains(path) || ConfigUpdater.removeKey(plugin, file(), path);
+        } else {
+            Map<String, Object> values = new LinkedHashMap<>();
+            values.put("x", round(target.getX(), 100));
+            values.put("y", round(target.getY(), 100));
+            values.put("z", round(target.getZ(), 100));
+            saved = ConfigUpdater.setValues(plugin, file(), path, values);
+        }
+        if (!saved) {
+            return PointResult.SAVE_FAILED;
+        }
+        load();
+        return PointResult.MOVED;
     }
 
     public boolean removePoint(String name) {
@@ -278,6 +336,82 @@ public class IntroManager {
             load();
         }
         return removed;
+    }
+
+    private boolean curved() {
+        return !"STRAIGHT".equalsIgnoreCase(intro.getString("path", "CURVE").trim());
+    }
+
+    /** Runs console commands for a player of the intro; {player} is their name. A failing command doesn't stop the intro. */
+    void runCommands(List<String> commands, Player player) {
+        for (String command : commands) {
+            String line = command.trim().replace("{player}", player.getName());
+            if (line.startsWith("/")) {
+                line = line.substring(1);
+            }
+            if (line.isEmpty()) {
+                continue;
+            }
+            try {
+                Bukkit.dispatchCommand(Bukkit.getConsoleSender(), line);
+            } catch (RuntimeException ex) {
+                plugin.getLogger().warning("Intro command '" + line + "' failed: " + ex.getMessage());
+            }
+        }
+    }
+
+    // ---------------------------------------------------------------- path preview for admins
+
+    /** Shows (or hides again) the camera's path as particles, only to {@code viewer}. */
+    public PreviewResult togglePreview(Player viewer) {
+        BukkitTask running = previews.remove(viewer.getUniqueId());
+        if (running != null) {
+            running.cancel();
+            return PreviewResult.HIDDEN;
+        }
+        List<IntroPoint> points = points();
+        if (points.isEmpty()) {
+            return PreviewResult.NO_POINTS;
+        }
+        IntroPath path = new IntroPath(points, curved(), false, null);
+        List<Location> trail = new ArrayList<>();
+        int step = Math.max(2, path.totalTicks() / PREVIEW_MAX_DOTS);
+        for (int tick = 0; tick < path.totalTicks(); tick += step) {
+            trail.add(path.frame(tick).camera());
+        }
+        UUID id = viewer.getUniqueId();
+        BukkitTask task = Bukkit.getScheduler().runTaskTimer(plugin, new Runnable() {
+            private int runs;
+
+            @Override
+            public void run() {
+                if (!viewer.isOnline() || runs++ >= PREVIEW_SECONDS * 20 / PREVIEW_REFRESH_TICKS) {
+                    BukkitTask self = previews.remove(id);
+                    if (self != null) {
+                        self.cancel();
+                    }
+                    return;
+                }
+                World world = viewer.getWorld();
+                for (Location spot : trail) {
+                    if (spot.getWorld() == world) {
+                        viewer.spawnParticle(Particle.DUST, spot, 1, 0, 0, 0, 0, PATH_DUST, true);
+                    }
+                }
+                for (IntroPoint point : points) {
+                    if (point.location().getWorld() != world) {
+                        continue;
+                    }
+                    viewer.spawnParticle(Particle.DUST, point.location(), 4, 0.15, 0.15, 0.15, 0, POINT_DUST, true);
+                    if (point.lookAt() != null) {
+                        viewer.spawnParticle(Particle.DUST, point.lookAt().toLocation(world), 4, 0.15, 0.15, 0.15, 0,
+                                TARGET_DUST, true);
+                    }
+                }
+            }
+        }, 0L, PREVIEW_REFRESH_TICKS);
+        previews.put(id, task);
+        return PreviewResult.SHOWN;
     }
 
     private static double round(double value, int factor) {
@@ -308,6 +442,14 @@ public class IntroManager {
 
     public enum StartResult {
         STARTED, ALREADY_RUNNING, NO_POINTS
+    }
+
+    public enum PointResult {
+        ADDED, MOVED, NOT_FOUND, SAVE_FAILED
+    }
+
+    public enum PreviewResult {
+        SHOWN, HIDDEN, NO_POINTS
     }
 
     public enum End {

@@ -46,7 +46,9 @@ public abstract class PluginTestBase {
         return join(new TestPlayer(server, name, new java.util.UUID(0L, 2535400000000000L + name.hashCode())));
     }
 
+    // Players who know the server already; tests about brand-new players create them themselves.
     private TestPlayer join(TestPlayer player) {
+        player.setPlayedBefore(true);
         server.addPlayer(player);
         // Let the delayed first-join teleport finish before the test moves the player.
         server.getScheduler().performTicks(2);
