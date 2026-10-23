@@ -29,6 +29,10 @@ public class WorldChangeListener implements Listener {
         if (plugin.getTeleportManager().isInFlight(player.getUniqueId())) {
             return;
         }
+        // The intro moves its viewers between worlds on purpose.
+        if (plugin.getIntroManager().isBusy(player)) {
+            return;
+        }
         if (!plugin.getSpawnManager().hasSpawn()) {
             return;
         }

@@ -10,6 +10,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.scheduler.BukkitTask;
 
 import java.time.Duration;
+import java.util.Locale;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
@@ -109,16 +110,16 @@ public class NotificationManager {
 
         BossBar.Color color;
         try {
-            color = BossBar.Color.valueOf(colorName.toUpperCase());
+            color = BossBar.Color.valueOf(colorName.toUpperCase(Locale.ROOT));
         } catch (IllegalArgumentException ex) {
-            String alias = BOSSBAR_COLOR_ALIASES.get(colorName.toUpperCase());
+            String alias = BOSSBAR_COLOR_ALIASES.get(colorName.toUpperCase(Locale.ROOT));
             color = alias != null ? BossBar.Color.valueOf(alias) : BossBar.Color.PURPLE;
         }
         BossBar.Overlay overlay;
         try {
-            overlay = BossBar.Overlay.valueOf(styleName.toUpperCase());
+            overlay = BossBar.Overlay.valueOf(styleName.toUpperCase(Locale.ROOT));
         } catch (IllegalArgumentException ex) {
-            String alias = BOSSBAR_STYLE_ALIASES.get(styleName.toUpperCase());
+            String alias = BOSSBAR_STYLE_ALIASES.get(styleName.toUpperCase(Locale.ROOT));
             overlay = alias != null ? BossBar.Overlay.valueOf(alias) : BossBar.Overlay.PROGRESS;
         }
 

@@ -1,5 +1,7 @@
 package dev.stonespawn.plugin.model;
 
+import java.util.Locale;
+
 public enum BoostTrigger {
     SWAP_HAND,
     SNEAK,
@@ -10,7 +12,7 @@ public enum BoostTrigger {
             return fallback;
         }
         try {
-            return BoostTrigger.valueOf(value.trim().toUpperCase());
+            return BoostTrigger.valueOf(value.trim().toUpperCase(Locale.ROOT));
         } catch (IllegalArgumentException ex) {
             return fallback;
         }
@@ -25,6 +27,6 @@ public enum BoostTrigger {
     }
 
     private String keyName() {
-        return name().toLowerCase().replace('_', '-');
+        return name().toLowerCase(Locale.ROOT).replace('_', '-');
     }
 }

@@ -33,7 +33,7 @@ public class StoneSpawnCommand implements CommandExecutor, TabCompleter {
             return true;
         }
 
-        switch (args[0].toLowerCase()) {
+        switch (args[0].toLowerCase(Locale.ROOT)) {
             case "reload" -> {
                 if (!requireAdmin(sender)) {
                     return true;
@@ -160,7 +160,7 @@ public class StoneSpawnCommand implements CommandExecutor, TabCompleter {
     public List<String> onTabComplete(CommandSender sender, Command command, String alias, String[] args) {
         boolean isAdmin = sender.hasPermission("stonespawn.admin");
         if (args.length == 1) {
-            String partial = args[0].toLowerCase();
+            String partial = args[0].toLowerCase(Locale.ROOT);
             Stream<String> options = isAdmin ? Stream.of("reload", "help", "checkupdate", "intro") : Stream.of("help");
             return options.filter(s -> s.startsWith(partial)).collect(Collectors.toList());
         }

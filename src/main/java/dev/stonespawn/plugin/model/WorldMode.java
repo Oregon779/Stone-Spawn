@@ -1,5 +1,7 @@
 package dev.stonespawn.plugin.model;
 
+import java.util.Locale;
+
 public enum WorldMode {
     NONE,
     WHITELIST,
@@ -10,7 +12,7 @@ public enum WorldMode {
             return fallback;
         }
         try {
-            return WorldMode.valueOf(value.trim().toUpperCase());
+            return WorldMode.valueOf(value.trim().toUpperCase(Locale.ROOT));
         } catch (IllegalArgumentException ex) {
             return fallback;
         }

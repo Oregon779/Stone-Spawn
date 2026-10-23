@@ -1,6 +1,7 @@
 package dev.stonespawn.plugin.manager;
 
 import dev.stonespawn.plugin.PluginTestBase;
+import dev.stonespawn.plugin.TestPlayer;
 import org.bukkit.Particle;
 import org.bukkit.Sound;
 import org.junit.jupiter.api.Test;
@@ -28,6 +29,37 @@ class SmallUnitsTest extends PluginTestBase {
         assertFalse(UpdateChecker.isNewer("1.2.0-beta", "1.2.0"));
         assertFalse(UpdateChecker.isNewer("garbage", "1.0.0"));
         assertFalse(UpdateChecker.isNewer("99999999999999999999", "1.0.0"));
+    }
+
+    @Test
+    void releaseIsNewerThanItsDevBuilds() {
+        assertTrue(UpdateChecker.isNewer("1.1.0", "1.1.0-dev2"), "dev servers hear about the release");
+        assertTrue(UpdateChecker.isNewer("1.2.0", "1.1.0-dev2"));
+        assertFalse(UpdateChecker.isNewer("1.1.0-dev3", "1.1.0-dev2"));
+        assertFalse(UpdateChecker.isNewer("1.1.0-dev1", "1.1.0"));
+        assertFalse(UpdateChecker.isNewer("1.0.0", "1.1.0-dev2"));
+    }
+
+    @Test
+    void configValuesWorkOnServersWithATurkishLocale() {
+        java.util.Locale before = java.util.Locale.getDefault();
+        // In Turkish, "i".toUpperCase() is "İ" and "I".toLowerCase() is "ı".
+        java.util.Locale.setDefault(java.util.Locale.forLanguageTag("tr-TR"));
+        try {
+            assertEquals(dev.stonespawn.plugin.model.JoinMode.FIRST_JOIN,
+                    dev.stonespawn.plugin.model.JoinMode.fromConfig("first_join", dev.stonespawn.plugin.model.JoinMode.NEVER));
+            assertEquals(dev.stonespawn.plugin.model.WorldMode.WHITELIST,
+                    dev.stonespawn.plugin.model.WorldMode.fromConfig("whitelist", dev.stonespawn.plugin.model.WorldMode.NONE));
+            assertEquals(dev.stonespawn.plugin.model.MessageDisplayType.TITLE,
+                    dev.stonespawn.plugin.model.MessageDisplayType.fromConfig("title", dev.stonespawn.plugin.model.MessageDisplayType.CHAT));
+            assertEquals("elytra.keys.left-click", dev.stonespawn.plugin.model.BoostTrigger.LEFT_CLICK.messageKey());
+
+            TestPlayer admin = addAdmin("Admin");
+            admin.performCommand("stonespawn INTRO list");
+            assertEquals(java.util.List.of("[StoneSpawn] The intro has no camera points yet."), messages(admin));
+        } finally {
+            java.util.Locale.setDefault(before);
+        }
     }
 
     @Test

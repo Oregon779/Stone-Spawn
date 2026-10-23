@@ -1,5 +1,7 @@
 package dev.stonespawn.plugin.model;
 
+import java.util.Locale;
+
 public enum JoinMode {
     ALWAYS,
     FIRST_JOIN,
@@ -10,7 +12,7 @@ public enum JoinMode {
             return fallback;
         }
         try {
-            return JoinMode.valueOf(value.trim().toUpperCase());
+            return JoinMode.valueOf(value.trim().toUpperCase(Locale.ROOT));
         } catch (IllegalArgumentException ex) {
             return fallback;
         }

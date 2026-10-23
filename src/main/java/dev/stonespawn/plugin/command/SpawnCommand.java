@@ -15,6 +15,7 @@ import org.bukkit.entity.Player;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.stream.Collectors;
 
@@ -132,9 +133,9 @@ public class SpawnCommand implements CommandExecutor, TabCompleter {
     }
 
     private List<String> filter(List<String> options, String partial) {
-        String lower = partial.toLowerCase();
+        String lower = partial.toLowerCase(Locale.ROOT);
         return options.stream()
-                .filter(option -> option.toLowerCase().startsWith(lower))
+                .filter(option -> option.toLowerCase(Locale.ROOT).startsWith(lower))
                 .distinct()
                 .collect(Collectors.toList());
     }

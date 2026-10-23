@@ -123,6 +123,43 @@ class IntroTest extends PluginTestBase {
     }
 
     @Test
+    void pointsInOtherWorldsDontTriggerTheWorldChangeTeleport() {
+        org.mockbukkit.mockbukkit.world.WorldMock sky = server.addSimpleWorld("sky");
+        TestPlayer admin = addAdmin("Admin");
+        admin.teleport(new Location(sky, 0.5, 120, 0.5));
+        Location skyPoint = admin.getEyeLocation();
+        admin.performCommand("stonespawn intro addpoint sky");
+        admin.teleport(new Location(world, 1.5, 64, 1.5));
+        configure(Map.of("spawn.world-change.enabled", true));
+
+        TestPlayer player = addPlayer("Steve");
+        Location start = player.getLocation();
+        plugin.getIntroManager().start(player);
+        server.getScheduler().performTicks(2 + 20 + 20 + 22);
+        assertTrue(near(player.getLocation(), skyPoint), "reached the point in the other world");
+        assertEquals(GameMode.SPECTATOR, player.getGameMode());
+
+        server.getScheduler().performTicks(40);
+        assertEquals(GameMode.SURVIVAL, player.getGameMode());
+        assertTrue(sameBlock(player.getLocation(), start), "back where it started, not at the spawn");
+    }
+
+    @Test
+    void whenTheWayBackIsGoneThePlayerLandsAtTheSpawn() {
+        org.mockbukkit.mockbukkit.world.WorldMock temporary = server.addSimpleWorld("temporary");
+        TestPlayer player = addPlayer("Steve");
+        player.teleport(new Location(temporary, 3.5, 64, 3.5));
+        plugin.getIntroManager().start(player);
+        server.getScheduler().performTicks(3);
+
+        server.removeWorld(temporary);
+        server.getScheduler().performTicks(WHOLE_INTRO_TICKS);
+
+        assertEquals(GameMode.SURVIVAL, player.getGameMode());
+        assertTrue(sameBlock(player.getLocation(), spawn), "not left in mid-air at the camera");
+    }
+
+    @Test
     void bedrockPlayersJumpFromPointToPoint() {
         TestPlayer bedrock = addBedrockPlayer("BedrockSteve");
         Location start = bedrock.getLocation();
@@ -239,6 +276,15 @@ class IntroTest extends PluginTestBase {
         assertEquals(GameMode.ADVENTURE, player.getGameMode());
         assertTrue(sameBlock(player.getLocation(), start));
         assertTrue(player.getPersistentDataContainer().getKeys().isEmpty());
+
+        // Same after a crash, but the world of the way back no longer exists.
+        player.setGameMode(GameMode.SPECTATOR);
+        player.teleport(tower);
+        player.getPersistentDataContainer().set(new NamespacedKey(plugin, "intro_game_mode"), PersistentDataType.STRING, "SURVIVAL");
+        player.getPersistentDataContainer().set(new NamespacedKey(plugin, "intro_return"), PersistentDataType.STRING,
+                "deleted_world;7.5;64.0;7.5;0.0;0.0");
+        server.getPluginManager().callEvent(new PlayerJoinEvent(player, Component.empty()));
+        assertTrue(sameBlock(player.getLocation(), spawn));
     }
 
     @Test

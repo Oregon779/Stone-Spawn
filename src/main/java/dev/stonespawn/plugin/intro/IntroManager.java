@@ -20,10 +20,12 @@ import org.bukkit.persistence.PersistentDataType;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 
 /**
@@ -41,6 +43,7 @@ public class IntroManager {
     private final NamespacedKey gameModeKey;
     private final NamespacedKey returnKey;
     private final Map<UUID, IntroSession> sessions = new HashMap<>();
+    private final Set<UUID> returning = new HashSet<>();
     private YamlConfiguration intro;
 
     public IntroManager(StoneSpawn plugin) {
@@ -105,17 +108,31 @@ public class IntroManager {
             return;
         }
         session.stop();
+        UUID id = player.getUniqueId();
         switch (end) {
-            case COMPLETED, SKIPPED -> player.teleportAsync(session.returnTo()).whenComplete((success, error) -> {
-                if (plugin.isEnabled()) {
+            case COMPLETED, SKIPPED -> {
+                returning.add(id);
+                player.teleportAsync(returnLocation(player, session)).whenComplete((success, error) -> {
+                    if (!plugin.isEnabled()) {
+                        returning.remove(id);
+                        return;
+                    }
                     Bukkit.getScheduler().runTask(plugin, () -> {
+                        if (!Boolean.TRUE.equals(success) && player.isOnline()) {
+                            player.teleport(fallbackLocation(player));
+                        }
+                        returning.remove(id);
                         restoreGameMode(player);
                         openBook(player);
                     });
-                }
-            });
+                });
+            }
             case QUIT, SHUTDOWN -> {
-                player.teleport(session.returnTo());
+                returning.add(id);
+                if (!player.teleport(returnLocation(player, session))) {
+                    player.teleport(fallbackLocation(player));
+                }
+                returning.remove(id);
                 restoreGameMode(player);
             }
             case INTERRUPTED -> restoreGameMode(player);
@@ -130,11 +147,25 @@ public class IntroManager {
             return;
         }
         Location back = decode(data.get(returnKey, PersistentDataType.STRING));
-        if (back != null) {
-            player.teleport(back);
-        }
+        player.teleport(back != null ? back : fallbackLocation(player));
         restoreGameMode(player);
         plugin.getLogger().info("Brought " + player.getName() + " back from an intro that was cut off by a server stop.");
+    }
+
+    /** True while the player watches the intro or is on the way back, so other automatic teleports stay out of it. */
+    public boolean isBusy(Player player) {
+        return sessions.containsKey(player.getUniqueId()) || returning.contains(player.getUniqueId());
+    }
+
+    private Location returnLocation(Player player, IntroSession session) {
+        Location back = session.returnTo();
+        return back.isWorldLoaded() ? back : fallbackLocation(player);
+    }
+
+    // Used when the way back is gone (e.g. its world was unloaded), so nobody is left in mid-air at the camera.
+    private Location fallbackLocation(Player player) {
+        Location spawn = plugin.getSpawnManager().getSpawn();
+        return spawn != null ? spawn : player.getWorld().getSpawnLocation();
     }
 
     public void shutdown() {

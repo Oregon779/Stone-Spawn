@@ -3,6 +3,7 @@ package dev.stonespawn.plugin.listener;
 import dev.stonespawn.plugin.StoneSpawn;
 import dev.stonespawn.plugin.manager.ConfigManager;
 import dev.stonespawn.plugin.model.TeleportContext;
+import org.bukkit.GameMode;
 import org.bukkit.Location;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -33,6 +34,10 @@ public class VoidTeleportListener implements Listener {
         }
 
         Player player = event.getPlayer();
+        // Spectators can't die in the void, e.g. admins looking at a build from below or intro viewers.
+        if (player.getGameMode() == GameMode.SPECTATOR) {
+            return;
+        }
         if (!plugin.getWorldRestrictionManager().isAllowed(player.getWorld())) {
             return;
         }

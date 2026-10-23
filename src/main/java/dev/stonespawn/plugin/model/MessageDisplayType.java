@@ -1,5 +1,7 @@
 package dev.stonespawn.plugin.model;
 
+import java.util.Locale;
+
 public enum MessageDisplayType {
     CHAT,
     ACTIONBAR,
@@ -11,7 +13,7 @@ public enum MessageDisplayType {
             return fallback;
         }
         try {
-            return MessageDisplayType.valueOf(value.trim().toUpperCase());
+            return MessageDisplayType.valueOf(value.trim().toUpperCase(Locale.ROOT));
         } catch (IllegalArgumentException ex) {
             return fallback;
         }

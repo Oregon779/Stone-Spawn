@@ -7,6 +7,7 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerCommandSendEvent;
 
 import java.util.Collection;
+import java.util.Locale;
 
 public class CommandVisibilityListener implements Listener {
 
@@ -33,6 +34,6 @@ public class CommandVisibilityListener implements Listener {
 
     private void removeCommand(Collection<String> commands, String label) {
         commands.remove(label);
-        commands.remove(plugin.getName().toLowerCase() + ":" + label);
+        commands.remove(plugin.getName().toLowerCase(Locale.ROOT) + ":" + label);
     }
 }

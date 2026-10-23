@@ -12,6 +12,7 @@ import org.bukkit.entity.Player;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.stream.Collectors;
 
@@ -63,7 +64,7 @@ public class SetSpawnCommand implements CommandExecutor, TabCompleter {
     @Override
     public List<String> onTabComplete(CommandSender sender, Command command, String alias, String[] args) {
         if (args.length == 1 && sender.hasPermission("stonespawn.admin")) {
-            String partial = args[0].toLowerCase();
+            String partial = args[0].toLowerCase(Locale.ROOT);
             return plugin.getSpawnManager().getSpawnNames().stream()
                     .filter(name -> name.startsWith(partial))
                     .collect(Collectors.toList());

@@ -86,7 +86,9 @@ public class UpdateChecker implements Listener {
                 return;
             }
 
-            String newest = versions.get(0).getAsJsonObject().get("version_number").getAsString();
+            // Shown in chat through MiniMessage, so nothing but plain version characters may come from outside.
+            String newest = versions.get(0).getAsJsonObject().get("version_number").getAsString()
+                    .replaceAll("[^A-Za-z0-9._+-]", "");
             String current = plugin.getPluginMeta().getVersion();
 
             if (isNewer(newest, current)) {
@@ -175,10 +177,15 @@ public class UpdateChecker implements Listener {
                     return r > c;
                 }
             }
-            return false;
+            // Same numbers: the release is newer than a dev or pre-release build of it (1.1.0 > 1.1.0-dev2).
+            return !isPreRelease(remote) && isPreRelease(current);
         } catch (Exception e) {
             return false;
         }
+    }
+
+    private static boolean isPreRelease(String version) {
+        return version.indexOf('-') >= 0;
     }
 
     private static int parsePart(String part) {
