@@ -20,6 +20,7 @@ public class TestPlayer extends PlayerMock {
     private final java.util.List<String> stoppedSounds = new java.util.ArrayList<>();
     private boolean playedBefore;
     private org.bukkit.block.Block targetBlock;
+    private org.bukkit.event.player.PlayerResourcePackStatusEvent.Status resourcePackStatus;
 
     public TestPlayer(ServerMock server, String name) {
         super(server, name);
@@ -109,6 +110,16 @@ public class TestPlayer extends PlayerMock {
 
     public java.util.List<net.kyori.adventure.inventory.Book> openedBooks() {
         return openedBooks;
+    }
+
+    @Override
+    public org.bukkit.event.player.PlayerResourcePackStatusEvent.Status getResourcePackStatus() {
+        return resourcePackStatus;
+    }
+
+    /** The status of a resource pack loaded before joining, like one from server.properties. */
+    public void setResourcePackStatus(org.bukkit.event.player.PlayerResourcePackStatusEvent.Status status) {
+        this.resourcePackStatus = status;
     }
 
     /** MockBukkit can't trace what a player looks at; tests say it here. */

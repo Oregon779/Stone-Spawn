@@ -16,6 +16,7 @@ import org.bukkit.World;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
+import org.bukkit.event.player.PlayerResourcePackStatusEvent;
 import org.bukkit.persistence.PersistentDataContainer;
 import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.scheduler.BukkitTask;
@@ -42,6 +43,7 @@ public class IntroManager {
     private static final String RESOURCE_PATH = "intro.yml";
     private static final int JOIN_TELEPORT_RETRIES = 20;
     private static final long JOIN_TELEPORT_RETRY_TICKS = 10L;
+    private static final int PACK_CHECK_TICKS = 5;
     private static final int PREVIEW_SECONDS = 60;
     private static final long PREVIEW_REFRESH_TICKS = 10L;
     // Enough dots for a smooth line without flooding the viewer with particles on long intros.
@@ -56,6 +58,7 @@ public class IntroManager {
     private final Map<UUID, IntroSession> sessions = new HashMap<>();
     private final Set<UUID> returning = new HashSet<>();
     private final Map<UUID, BukkitTask> previews = new HashMap<>();
+    private final Map<UUID, PackWait> packWaits = new HashMap<>();
     private final Set<String> reportedPoints = new HashSet<>();
     private YamlConfiguration intro;
 
@@ -79,9 +82,65 @@ public class IntroManager {
         return intro.getBoolean("enabled", false) && !player.hasPlayedBefore();
     }
 
-    /** Starts the intro once the player's world has had time to load. Without camera points only the book opens. */
+    /**
+     * Starts the intro once the player's world - and, with resource-pack.wait, their resource packs - have had time to
+     * load. Without camera points only the book opens.
+     */
     public void startAfterJoin(Player player) {
-        startAfterJoin(player, Math.max(1, intro.getInt("start-delay-ticks", 40)), JOIN_TELEPORT_RETRIES);
+        int delay = Math.max(1, intro.getInt("start-delay-ticks", 40));
+        if (!intro.getBoolean("resource-pack.wait", false)) {
+            startAfterJoin(player, delay, JOIN_TELEPORT_RETRIES);
+            return;
+        }
+        UUID id = player.getUniqueId();
+        PackWait wait = new PackWait();
+        // A pack from server.properties is loaded before joining; plugins send theirs afterwards.
+        wait.loaded = isFinal(player.getResourcePackStatus());
+        packWaits.put(id, wait);
+        int maxWait = (int) Math.round(Math.max(1, intro.getDouble("resource-pack.max-wait-seconds", 60)) * 20);
+        Bukkit.getScheduler().runTaskTimer(plugin, task -> {
+            if (!player.isOnline() || packWaits.get(id) != wait) {
+                task.cancel();
+                packWaits.remove(id, wait);
+                return;
+            }
+            wait.waited += PACK_CHECK_TICKS;
+            boolean ready = wait.loaded && wait.loading.isEmpty();
+            wait.sinceReady = ready ? wait.sinceReady + PACK_CHECK_TICKS : 0;
+            if (wait.sinceReady >= delay || wait.waited >= maxWait) {
+                task.cancel();
+                packWaits.remove(id);
+                startAfterJoin(player, 1, JOIN_TELEPORT_RETRIES);
+            }
+        }, PACK_CHECK_TICKS, PACK_CHECK_TICKS);
+    }
+
+    /** Follows the resource packs a player waiting for the intro is loading (see resource-pack.wait). */
+    public void handleResourcePack(Player player, UUID pack, PlayerResourcePackStatusEvent.Status status) {
+        PackWait wait = packWaits.get(player.getUniqueId());
+        if (wait == null) {
+            return;
+        }
+        if (isFinal(status)) {
+            // Declined or failed counts too: the intro then simply plays without the pack.
+            wait.loading.remove(pack);
+            wait.loaded = true;
+        } else {
+            wait.loading.add(pack);
+        }
+    }
+
+    private static boolean isFinal(PlayerResourcePackStatusEvent.Status status) {
+        return status != null && status != PlayerResourcePackStatusEvent.Status.ACCEPTED
+                && status != PlayerResourcePackStatusEvent.Status.DOWNLOADED;
+    }
+
+    /** Packs a joining player is still loading, and how long the intro has been waiting for them. */
+    private static final class PackWait {
+        private final Set<UUID> loading = new HashSet<>();
+        private boolean loaded;
+        private int waited;
+        private int sinceReady;
     }
 
     // The intro returns players to where it started, so it waits until the first-join teleport has arrived.

@@ -38,8 +38,19 @@ enabled: false
 skippable: true
 
 # Ticks to wait after joining before the intro starts, so the world has
-# finished loading for the player (20 ticks = 1 second).
+# finished loading for the player (20 ticks = 1 second). With
+# resource-pack.wait below, they are counted from the moment the resource
+# pack has finished loading instead.
 start-delay-ticks: 40
+
+# Wait for the resource pack a plugin (ItemsAdder, Oraxen, Nexo, ...) sends
+# after joining, so the intro already shows its textures and sounds. If
+# more packs follow, the intro waits for them too. A player who declines
+# the pack, or whose pack fails to load, gets the intro without it.
+resource-pack:
+  wait: false
+  # Start the intro anyway after this many seconds, e.g. if no pack comes.
+  max-wait-seconds: 60
 
 # How the camera travels from point to point:
 #   CURVE    -> one smooth curve through all points, like a camera drone

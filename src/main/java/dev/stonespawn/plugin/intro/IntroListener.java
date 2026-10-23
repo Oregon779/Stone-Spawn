@@ -8,6 +8,7 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerGameModeChangeEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
+import org.bukkit.event.player.PlayerResourcePackStatusEvent;
 import org.bukkit.event.player.PlayerTeleportEvent;
 import org.bukkit.event.player.PlayerToggleSneakEvent;
 
@@ -22,6 +23,11 @@ public class IntroListener implements Listener {
     @EventHandler(priority = EventPriority.LOWEST)
     public void onJoin(PlayerJoinEvent event) {
         intro.recover(event.getPlayer());
+    }
+
+    @EventHandler
+    public void onResourcePack(PlayerResourcePackStatusEvent event) {
+        intro.handleResourcePack(event.getPlayer(), event.getID(), event.getStatus());
     }
 
     @EventHandler

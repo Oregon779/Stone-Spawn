@@ -398,6 +398,9 @@ Players who join the server for the **very first time** can get a cinematic intr
 enabled: true
 skippable: true          # Shift ends the intro early (the player still gets the book and the rewards)
 start-delay-ticks: 40    # wait after joining, so the world has loaded (20 ticks = 1 second)
+resource-pack:
+  wait: true             # count start-delay-ticks from when the resource pack has loaded
+  max-wait-seconds: 60   # start anyway after this long
 path: CURVE              # or STRAIGHT
 fly-seconds: 4.0         # default flight time from one point to the next
 stay-seconds: 3.0        # default time the camera stays at a point (0 = fly through)
@@ -470,7 +473,8 @@ Texts support `&` codes, hex colors, MiniMessage and the placeholder `{player}`.
 
 **How it plays**
 
-- It starts `start-delay-ticks` after the first join, and only after the first-join teleport (see `spawn.join.mode`) has arrived. With `FIRST_JOIN` or `ALWAYS`, the intro therefore starts and ends at the main spawn; with `NEVER`, where the player joined.
+- **Resource packs:** with `resource-pack.wait: true`, the intro waits until the resource pack a plugin sends after joining (ItemsAdder, Oraxen, Nexo, ...) has finished loading, and starts `start-delay-ticks` after that - so the intro already shows the pack's textures, sounds and fonts. If more packs follow, it waits for them too. A player who declines the pack, or whose pack fails to load, gets the intro without it. A pack from `server.properties` is already loaded when the player joins. `max-wait-seconds` starts the intro anyway if no pack comes. (A pack sent by a proxy like Velocity can't be seen by the server - leave `wait` off then and choose a long enough `start-delay-ticks`.)
+- It starts `start-delay-ticks` after the first join (or after the resource pack, see above), and only after the first-join teleport (see `spawn.join.mode`) has arrived. With `FIRST_JOIN` or `ALWAYS`, the intro therefore starts and ends at the main spawn; with `NEVER`, where the player joined.
 - During the intro the player is in spectator mode, invisible to others and can't be hurt. Their game mode is given back at the end.
 - **Bedrock players** (Geyser/Floodgate) can't follow a flying camera, so they jump from point to point instead, looking at the point's target, and stay at each point for its stay time plus the flight time to the next one. Texts, typewriter, boss bar, time, weather, music and commands work the same.
 - Only players who are **new to the server** get it - players who already played before StoneSpawn was installed don't.
@@ -713,6 +717,9 @@ See [Messages and Languages](#messages-and-languages). The countdown/arrival tex
 
 **Other players see or hear my teleport effects.**
 They can't: the countdown spiral, the tick sound and the arrival effect are sent to the teleporting player only. What others see is the particle ring that is always at the spawn, or an elytra boost. When testing with two accounts on one computer, both game windows play their sounds through the same speakers. If something else shows up, another plugin is adding its own teleport effects.
+
+**The intro starts before my resource pack (ItemsAdder, Oraxen, Nexo, ...) has loaded.**
+Set `resource-pack.wait: true` in `intro.yml`. The intro then waits for the pack and starts `start-delay-ticks` after it has loaded. See [First-Join Intro](#first-join-intro).
 
 **New players don't get the intro.**
 Check `enabled: true` in `intro.yml` and that it has camera points (`/stonespawn intro list`). The intro is only for players who are new to the server; test it with `/stonespawn intro play`.
