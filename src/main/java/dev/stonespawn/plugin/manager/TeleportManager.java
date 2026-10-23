@@ -36,11 +36,6 @@ public class TeleportManager {
         return pending.containsKey(uuid);
     }
 
-    /** True while a countdown runs or a teleport hasn't arrived yet. */
-    public boolean isTeleporting(UUID uuid) {
-        return pending.containsKey(uuid) || inFlight.contains(uuid);
-    }
-
     public PendingTeleport getPending(UUID uuid) {
         return pending.get(uuid);
     }

@@ -1,5 +1,5 @@
 name: StoneSpawn
-version: '1.1.0-dev4'
+version: '1.1.0-dev5'
 main: dev.stonespawn.plugin.StoneSpawn
 api-version: '26.2'
 author: Stone Plugins
@@ -26,13 +26,13 @@ commands:
     usage: /spawn [spawn] [player]
 
   stonespawn:
-    description: Main StoneSpawn command for reloading, setting up the first-join intro and viewing help.
-    usage: /stonespawn <reload|help|checkupdate|intro>
+    description: Main StoneSpawn command for reloading the plugin and viewing help.
+    usage: /stonespawn <reload|help|checkupdate>
     aliases: [sp, ss]
 
 permissions:
   stonespawn.admin:
-    description: Access to all StoneSpawn admin actions (setspawn, delspawn, renamespawn, teleporting others, reload, checkupdate, intro setup, update notifications).
+    description: Access to all StoneSpawn admin actions (setspawn, delspawn, renamespawn, teleporting others, reload, checkupdate, update notifications).
     default: op
 
   stonespawn.use:

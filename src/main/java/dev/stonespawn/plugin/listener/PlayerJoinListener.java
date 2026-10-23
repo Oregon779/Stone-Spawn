@@ -48,10 +48,6 @@ public class PlayerJoinListener implements Listener {
 
         if (!joinedBefore) {
             spawnManager.markJoined(player.getUniqueId());
-            // Starts where the join teleport above puts the player, and brings them back there at the end.
-            if (plugin.getIntroManager().playsOnFirstJoin(player)) {
-                plugin.getIntroManager().startAfterJoin(player);
-            }
         }
     }
 }

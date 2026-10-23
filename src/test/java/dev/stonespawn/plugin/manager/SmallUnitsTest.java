@@ -55,8 +55,8 @@ class SmallUnitsTest extends PluginTestBase {
             assertEquals("elytra.keys.left-click", dev.stonespawn.plugin.model.BoostTrigger.LEFT_CLICK.messageKey());
 
             TestPlayer admin = addAdmin("Admin");
-            admin.performCommand("stonespawn INTRO list");
-            assertEquals(java.util.List.of("[StoneSpawn] The intro has no camera points yet."), messages(admin));
+            admin.performCommand("stonespawn RELOAD");
+            assertEquals(java.util.List.of("[StoneSpawn] ✔ Configuration and messages have been reloaded."), messages(admin));
         } finally {
             java.util.Locale.setDefault(before);
         }

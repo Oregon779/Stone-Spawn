@@ -17,12 +17,6 @@ is in the [Wiki](WIKI.md).
 - Multiple spawns: `/setspawn <name>` adds named spawns, `/spawn <name>`
   teleports to one, `/renamespawn <name> <new name>` renames one (the main
   spawn stays the main spawn), `/delspawn <name>` removes one
-- Cinematic first-join intro: new players get a smooth camera flight over
-  your spawn (curves, orbits around buildings, look-at targets) with titles,
-  typed subtitles, a chapter/progress boss bar, music, their own time of day
-  and weather, commands/rewards, and a book with your welcome text or rules
-  (`intro.yml`, off by default; path preview for admins; Bedrock players jump
-  from point to point)
 - Spawn selection GUI: with more than one spawn, `/spawn` opens a fully
   customizable GUI (`gui.yml`), can be switched off in `config.yml`
 - Elytra glide: players who jump off a spawn island glide down without an
@@ -76,8 +70,6 @@ Requires Paper (or a Paper fork) 26.2+ and Java 25. Not supported on Folia.
   and setting `language: <code>` in `config.yml`.
 - `plugins/StoneSpawn/gui.yml` - title, size, layout, items, texts and
   sounds of the spawn selection GUI.
-- `plugins/StoneSpawn/intro.yml` - camera points, texts and book of the
-  first-join intro.
 - `plugins/StoneSpawn/data.yml` - stores the spawn locations and which
   players have joined before. Not meant to be edited by hand.
 

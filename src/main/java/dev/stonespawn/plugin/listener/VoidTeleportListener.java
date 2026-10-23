@@ -34,7 +34,7 @@ public class VoidTeleportListener implements Listener {
         }
 
         Player player = event.getPlayer();
-        // Spectators can't die in the void, e.g. admins looking at a build from below or intro viewers.
+        // Spectators can't die in the void, e.g. admins looking at a build from below.
         if (player.getGameMode() == GameMode.SPECTATOR) {
             return;
         }

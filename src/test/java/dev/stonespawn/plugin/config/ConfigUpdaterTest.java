@@ -375,52 +375,6 @@ class ConfigUpdaterTest {
                 ConfigMigration.to(1)), Set.of()));
     }
 
-    // ---------------------------------------------------------------- editing files the owner wrote
-
-    @Test
-    void setValuesAddsASectionInTheFilesOwnIndentation() {
-        String text = "points:\n    tower:\n        x: 1.0\n# end\n";
-        Map<String, Object> values = new java.util.LinkedHashMap<>();
-        values.put("world", "my \"world\"");
-        values.put("x", 2.5);
-        assertEquals("points:\n    tower:\n        x: 1.0\n    market:\n        world: \"my \\\"world\\\"\"\n        x: 2.5\n# end\n",
-                YamlTextPatcher.setValues(text, "points.market", values));
-    }
-
-    @Test
-    void setValuesOpensAnEmptySectionAndKeepsItsComment() {
-        assertEquals("points: # mine\n  tower:\n    x: 1.0\n",
-                YamlTextPatcher.setValues("points: {} # mine\n", "points.tower", Map.of("x", 1.0)));
-    }
-
-    @Test
-    void setValuesReplacesValuesInPlaceAndAddsMissingOnes() {
-        String text = "points:\n  tower:\n    x: 1.0   # keep me\n    title: \"&bHi\"\n";
-        assertEquals("points:\n  tower:\n    x: 3.0   # keep me\n    title: \"&bHi\"\n    y: 4.0\n",
-                YamlTextPatcher.setValues(text, "points.tower", ordered("x", 3.0, "y", 4.0)));
-    }
-
-    private static Map<String, Object> ordered(String key1, Object value1, String key2, Object value2) {
-        Map<String, Object> values = new java.util.LinkedHashMap<>();
-        values.put(key1, value1);
-        values.put(key2, value2);
-        return values;
-    }
-
-    @Test
-    void textEditsGiveUpOnOneLineSections() {
-        assertNull(YamlTextPatcher.setValues("points: {tower: {x: 1}}\n", "points.market", Map.of("x", 2)));
-        assertNull(YamlTextPatcher.removeKey("points: {tower: {x: 1}}\n", "points.tower"));
-    }
-
-    @Test
-    void removeKeyLeavesAnEmptySectionAsBraces() {
-        String two = "points: # mine\n  tower:\n    x: 1.0\n  market:\n    x: 2.0\nbook: true\n";
-        String one = YamlTextPatcher.removeKey(two, "points.tower");
-        assertEquals("points: # mine\n  market:\n    x: 2.0\nbook: true\n", one);
-        assertEquals("points: {} # mine\nbook: true\n", YamlTextPatcher.removeKey(one, "points.market"));
-    }
-
     // ---------------------------------------------------------------- bundled files
 
     @Test
@@ -429,8 +383,7 @@ class ConfigUpdaterTest {
                 "/config.yml", ConfigSchema.CONFIG,
                 "/gui.yml", ConfigSchema.GUI,
                 "/languages/en/messages.yml", ConfigSchema.MESSAGES,
-                "/languages/de/messages.yml", ConfigSchema.MESSAGES,
-                "/intro.yml", ConfigSchema.INTRO);
+                "/languages/de/messages.yml", ConfigSchema.MESSAGES);
 
         for (Map.Entry<String, ConfigSchema> file : files.entrySet()) {
             String text = resource(file.getKey());
@@ -457,8 +410,7 @@ class ConfigUpdaterTest {
                 "/config.yml", ConfigSchema.CONFIG,
                 "/gui.yml", ConfigSchema.GUI,
                 "/languages/en/messages.yml", ConfigSchema.MESSAGES,
-                "/languages/de/messages.yml", ConfigSchema.MESSAGES,
-                "/intro.yml", ConfigSchema.INTRO);
+                "/languages/de/messages.yml", ConfigSchema.MESSAGES);
 
         for (Map.Entry<String, ConfigSchema> file : files.entrySet()) {
             String bundled = resource(file.getKey());

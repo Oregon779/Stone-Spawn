@@ -6,7 +6,7 @@
 
     <groupId>dev.stonespawn</groupId>
     <artifactId>stonespawn</artifactId>
-    <version>1.1.0-dev4</version>
+    <version>1.1.0-dev5</version>
     <packaging>jar</packaging>
 
     <name>StoneSpawn</name>

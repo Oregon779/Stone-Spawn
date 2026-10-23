@@ -7,8 +7,6 @@ import dev.stonespawn.plugin.command.SpawnCommand;
 import dev.stonespawn.plugin.command.StoneSpawnCommand;
 import dev.stonespawn.plugin.gui.SpawnGui;
 import dev.stonespawn.plugin.gui.SpawnGuiListener;
-import dev.stonespawn.plugin.intro.IntroListener;
-import dev.stonespawn.plugin.intro.IntroManager;
 import dev.stonespawn.plugin.listener.CommandVisibilityListener;
 import dev.stonespawn.plugin.listener.ElytraListener;
 import dev.stonespawn.plugin.listener.FallDamageListener;
@@ -46,7 +44,6 @@ public class StoneSpawn extends JavaPlugin {
     private UpdateChecker updateChecker;
     private ElytraManager elytraManager;
     private SpawnGui spawnGui;
-    private IntroManager introManager;
     private final BedrockDetector bedrockDetector = new BedrockDetector();
 
     @Override
@@ -70,8 +67,6 @@ public class StoneSpawn extends JavaPlugin {
         elytraManager = new ElytraManager(this);
         spawnGui = new SpawnGui(this);
         spawnGui.load();
-        introManager = new IntroManager(this);
-        introManager.load();
 
         registerCommands();
         registerListeners();
@@ -88,9 +83,6 @@ public class StoneSpawn extends JavaPlugin {
     public void onDisable() {
         if (spawnGui != null) {
             spawnGui.closeAll();
-        }
-        if (introManager != null) {
-            introManager.shutdown();
         }
         if (notificationManager != null) {
             notificationManager.hideAll();
@@ -115,7 +107,6 @@ public class StoneSpawn extends JavaPlugin {
         messageManager.load();
         worldRestrictionManager.refresh();
         spawnGui.load();
-        introManager.load();
         effectManager.reload();
         effectManager.startSpawnMarker();
         updateChecker.start();
@@ -157,7 +148,6 @@ public class StoneSpawn extends JavaPlugin {
         pm.registerEvents(updateChecker, this);
         pm.registerEvents(new ElytraListener(this), this);
         pm.registerEvents(new SpawnGuiListener(spawnGui), this);
-        pm.registerEvents(new IntroListener(introManager), this);
     }
 
     public ConfigManager getConfigManager() {
@@ -202,10 +192,6 @@ public class StoneSpawn extends JavaPlugin {
 
     public SpawnGui getSpawnGui() {
         return spawnGui;
-    }
-
-    public IntroManager getIntroManager() {
-        return introManager;
     }
 
     public BedrockDetector getBedrockDetector() {
