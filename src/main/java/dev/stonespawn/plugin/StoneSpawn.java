@@ -1,6 +1,7 @@
 package dev.stonespawn.plugin;
 
 import dev.stonespawn.plugin.command.DelSpawnCommand;
+import dev.stonespawn.plugin.command.RenameSpawnCommand;
 import dev.stonespawn.plugin.command.SetSpawnCommand;
 import dev.stonespawn.plugin.command.SpawnCommand;
 import dev.stonespawn.plugin.command.StoneSpawnCommand;
@@ -117,6 +118,10 @@ public class StoneSpawn extends JavaPlugin {
         DelSpawnCommand delSpawnCommand = new DelSpawnCommand(this);
         getCommand("delspawn").setExecutor(delSpawnCommand);
         getCommand("delspawn").setTabCompleter(delSpawnCommand);
+
+        RenameSpawnCommand renameSpawnCommand = new RenameSpawnCommand(this);
+        getCommand("renamespawn").setExecutor(renameSpawnCommand);
+        getCommand("renamespawn").setTabCompleter(renameSpawnCommand);
 
         SpawnCommand spawnCommand = new SpawnCommand(this);
         getCommand("spawn").setExecutor(spawnCommand);

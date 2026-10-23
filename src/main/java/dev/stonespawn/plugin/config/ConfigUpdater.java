@@ -148,17 +148,42 @@ public final class ConfigUpdater {
             return new Result(current, null, 0, version, latest, null);
         }
         String patched = YamlTextPatcher.insertMissing(currentText, defaultsText, schema.userSections());
-        if (patched != null) {
-            try {
-                YamlConfiguration patchedConfig = parse(patched);
-                if (sameContent(patchedConfig, current)) {
-                    return new Result(patchedConfig, patched, added, version, latest, null);
-                }
-            } catch (InvalidConfigurationException ex) {
-                // Falls through to the regular merge below.
-            }
+        YamlConfiguration patchedConfig = patched == null ? null : readsAs(patched, current);
+        if (patchedConfig != null) {
+            return new Result(patchedConfig, patched, added, version, latest, null);
         }
         return new Result(current, current.saveToString(), added, version, latest, null);
+    }
+
+    /**
+     * Renames {@code parentPath.oldKey} to {@code parentPath.newKey} in a YAML file the server owner edits (e.g. a
+     * spawn's own look in gui.yml). Only the key itself changes; comments and formatting stay as they are.
+     *
+     * @return false if the file has no such entry or can't be read, true once the entry carries the new name
+     */
+    public static boolean renameKey(JavaPlugin plugin, File file, String parentPath, String oldKey, String newKey) {
+        String path = parentPath.isEmpty() ? oldKey : parentPath + "." + oldKey;
+        String newPath = parentPath.isEmpty() ? newKey : parentPath + "." + newKey;
+        try {
+            String text = Files.readString(file.toPath());
+            YamlConfiguration expected = parse(text);
+            if (!expected.contains(path, true) || expected.contains(newPath, true)) {
+                return false;
+            }
+            copy(expected, path, expected, newPath);
+            expected.set(path, null);
+
+            String renamed = YamlTextPatcher.renameKey(text, parentPath, oldKey, newKey);
+            if (renamed == null || readsAs(renamed, expected) == null) {
+                renamed = expected.saveToString();
+            }
+            AtomicFiles.writeString(file.toPath(), renamed);
+            return true;
+        } catch (IOException | InvalidConfigurationException ex) {
+            plugin.getLogger().warning("Could not rename " + path + " to " + newPath + " in " + file.getName() + ": "
+                    + ex.getMessage());
+            return false;
+        }
     }
 
     static int mergeSection(ConfigurationSection defaults, ConfigurationSection current, Set<String> userSections) {
@@ -196,6 +221,16 @@ public final class ConfigUpdater {
         }
         target.setComments(targetPath, source.getComments(sourcePath));
         target.setInlineComments(targetPath, source.getInlineComments(sourcePath));
+    }
+
+    /** Parses a text edited line by line; null unless it holds exactly the options and values of {@code expected}. */
+    private static YamlConfiguration readsAs(String text, ConfigurationSection expected) {
+        try {
+            YamlConfiguration parsed = parse(text);
+            return sameContent(parsed, expected) ? parsed : null;
+        } catch (InvalidConfigurationException ex) {
+            return null;
+        }
     }
 
     /** True if both hold the same options with equal values; comments and formatting don't count. */

@@ -35,6 +35,15 @@ delspawn:
   success: "&a✔ The spawn &b{spawn} &ahas been deleted."
   usage: "&c✖ Usage: &f/delspawn <name>"
 
+renamespawn:
+  # {old} {new}
+  success: "&a✔ The spawn &b{old} &ais now called &b{new}&a."
+  # {old} {new}
+  success-main: "&a✔ The main spawn &b{old} &ais now called &b{new}&a - it stays the main spawn."
+  # {spawn}
+  name-taken: "&c✖ A spawn called &f{spawn} &calready exists."
+  usage: "&c✖ Usage: &f/renamespawn <name> <new name>"
+
 spawn:
   no-spawn-set: "&c✖ No spawn point has been set yet."
   # {spawn}
@@ -54,6 +63,7 @@ help:
   spawn-named: "&b/spawn <spawn> &8» &7Teleport to a specific spawn"
   setspawn-named: "&b/setspawn <name> &8» &7Set an additional, named spawn"
   delspawn: "&b/delspawn <name> &8» &7Delete a spawn"
+  renamespawn: "&b/renamespawn <name> <new name> &8» &7Rename a spawn"
   reload: "&b/stonespawn reload &8» &7Reload the configuration and messages"
   checkupdate: "&b/stonespawn checkupdate &8» &7Check Modrinth for a new version right now"
   help: "&b/stonespawn help &8» &7Show this help menu"

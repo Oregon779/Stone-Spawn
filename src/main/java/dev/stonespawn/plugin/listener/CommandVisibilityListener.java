@@ -24,6 +24,7 @@ public class CommandVisibilityListener implements Listener {
         if (!player.hasPermission("stonespawn.admin")) {
             removeCommand(commands, "setspawn");
             removeCommand(commands, "delspawn");
+            removeCommand(commands, "renamespawn");
         }
         if (!player.hasPermission("stonespawn.use")) {
             removeCommand(commands, "spawn");

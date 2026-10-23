@@ -34,8 +34,10 @@ import java.util.regex.Pattern;
 
 public class SpawnManager implements Listener {
 
+    /** Name the main spawn gets when it is created with /setspawn without a name. It can be renamed later. */
     public static final String MAIN_SPAWN = "spawn";
 
+    private static final String MAIN_PATH = "main-spawn";
     private static final String SPAWNS_PATH = "spawns";
     private static final String LEGACY_SPAWN_PATH = "spawn";
     private static final String JOINED_PATH = "joined-players";
@@ -47,6 +49,8 @@ public class SpawnManager implements Listener {
 
     private final Map<String, StoredSpawn> spawns = new HashMap<>();
     private final Set<String> joinedPlayers = new HashSet<>();
+    // Name of the spawn that join, death, void and world-change teleports use; null if there is none.
+    private String mainSpawn;
 
     private List<String> sortedNames = List.of();
     private Map<String, Location> resolvedSpawns = Map.of();
@@ -87,6 +91,15 @@ public class SpawnManager implements Listener {
             plugin.getLogger().info("Moved the existing spawn point to the new multi-spawn format as '" + MAIN_SPAWN + "'.");
         }
 
+        mainSpawn = null;
+        if (data.isString(MAIN_PATH)) {
+            String main = normalize(data.getString(MAIN_PATH));
+            mainSpawn = spawns.containsKey(main) ? main : null;
+        } else if (spawns.containsKey(MAIN_SPAWN)) {
+            // Saved before spawns could be renamed: the main spawn was the one called "spawn".
+            mainSpawn = MAIN_SPAWN;
+        }
+
         rebuildCache();
         if (migrated) {
             markDirty(true);
@@ -124,7 +137,7 @@ public class SpawnManager implements Listener {
     }
 
     public boolean hasSpawn() {
-        return hasSpawn(MAIN_SPAWN);
+        return mainSpawn != null;
     }
 
     public boolean hasSpawn(String name) {
@@ -132,7 +145,12 @@ public class SpawnManager implements Listener {
     }
 
     public Location getSpawn() {
-        return getSpawn(MAIN_SPAWN);
+        return mainSpawn == null ? null : getSpawn(mainSpawn);
+    }
+
+    /** @return the name of the main spawn, or null if there is none. */
+    public String getMainSpawnName() {
+        return mainSpawn;
     }
 
     /** @return a copy of the spawn location, or null if it doesn't exist or its world isn't loaded. */
@@ -155,23 +173,56 @@ public class SpawnManager implements Listener {
         return resolvedLocations;
     }
 
+    /** Moves the main spawn, whatever it is called, or creates it as "spawn" if there is none. */
     public void setSpawn(Location location) {
-        setSpawn(MAIN_SPAWN, location);
+        setSpawn(mainSpawn != null ? mainSpawn : MAIN_SPAWN, location);
     }
 
     public void setSpawn(String name, Location location) {
-        spawns.put(normalize(name), StoredSpawn.of(location));
+        String key = normalize(name);
+        spawns.put(key, StoredSpawn.of(location));
+        if (mainSpawn == null && key.equals(MAIN_SPAWN)) {
+            // Keeps "/setspawn spawn" meaning the same as "/setspawn" while there is no main spawn.
+            mainSpawn = key;
+        }
         rebuildCache();
         markDirty(true);
     }
 
     public boolean deleteSpawn(String name) {
-        if (spawns.remove(normalize(name)) == null) {
+        String key = normalize(name);
+        if (spawns.remove(key) == null) {
             return false;
+        }
+        if (key.equals(mainSpawn)) {
+            mainSpawn = null;
         }
         rebuildCache();
         markDirty(true);
         return true;
+    }
+
+    /** Renames a spawn; the main spawn stays the main spawn. The new name must already be validated. */
+    public RenameResult renameSpawn(String oldName, String newName) {
+        String from = normalize(oldName);
+        String to = normalize(newName);
+        if (!spawns.containsKey(from)) {
+            return RenameResult.NOT_FOUND;
+        }
+        if (spawns.containsKey(to)) {
+            return RenameResult.NAME_TAKEN;
+        }
+        spawns.put(to, spawns.remove(from));
+        if (from.equals(mainSpawn)) {
+            mainSpawn = to;
+        }
+        rebuildCache();
+        markDirty(true);
+        return RenameResult.RENAMED;
+    }
+
+    public enum RenameResult {
+        RENAMED, NOT_FOUND, NAME_TAKEN
     }
 
     public boolean hasJoinedBefore(UUID uuid) {
@@ -197,8 +248,8 @@ public class SpawnManager implements Listener {
     private void rebuildCache() {
         List<String> names = new ArrayList<>(spawns.keySet());
         names.sort((a, b) -> {
-            if (a.equals(MAIN_SPAWN) || b.equals(MAIN_SPAWN)) {
-                return a.equals(b) ? 0 : (a.equals(MAIN_SPAWN) ? -1 : 1);
+            if (a.equals(mainSpawn) || b.equals(mainSpawn)) {
+                return a.equals(b) ? 0 : (a.equals(mainSpawn) ? -1 : 1);
             }
             return a.compareTo(b);
         });
@@ -249,7 +300,7 @@ public class SpawnManager implements Listener {
     }
 
     private Snapshot snapshot() {
-        return new Snapshot(changeCounter.get(), Map.copyOf(spawns), new ArrayList<>(joinedPlayers));
+        return new Snapshot(changeCounter.get(), mainSpawn, Map.copyOf(spawns), new ArrayList<>(joinedPlayers));
     }
 
     // Async saves may run concurrently and out of order; the lock plus version check keeps only the newest state.
@@ -267,10 +318,12 @@ public class SpawnManager implements Listener {
         }
     }
 
-    private record Snapshot(long version, Map<String, StoredSpawn> spawns, List<String> joinedPlayers) {
+    private record Snapshot(long version, String mainSpawn, Map<String, StoredSpawn> spawns, List<String> joinedPlayers) {
 
         String toYaml() {
             YamlConfiguration yaml = new YamlConfiguration();
+            // Written even when empty, so a deleted main spawn isn't brought back by a spawn called "spawn".
+            yaml.set(MAIN_PATH, mainSpawn == null ? "" : mainSpawn);
             new ArrayList<>(spawns.keySet()).stream().sorted()
                     .forEach(name -> spawns.get(name).write(yaml, SPAWNS_PATH + "." + name));
             List<String> joined = new ArrayList<>(joinedPlayers);

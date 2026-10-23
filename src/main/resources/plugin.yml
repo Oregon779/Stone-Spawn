@@ -17,6 +17,10 @@ commands:
     description: Delete a spawn point.
     usage: /delspawn <name>
 
+  renamespawn:
+    description: Rename a spawn point. The main spawn stays the main spawn.
+    usage: /renamespawn <name> <new name>
+
   spawn:
     description: Teleport to a spawn point (or open the spawn selection), or teleport another player there.
     usage: /spawn [spawn] [player]
@@ -28,7 +32,7 @@ commands:
 
 permissions:
   stonespawn.admin:
-    description: Access to all StoneSpawn admin actions (setspawn, delspawn, teleporting others, reload, checkupdate, update notifications).
+    description: Access to all StoneSpawn admin actions (setspawn, delspawn, renamespawn, teleporting others, reload, checkupdate, update notifications).
     default: op
 
   stonespawn.use:

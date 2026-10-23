@@ -45,6 +45,14 @@ public class SpawnGui {
         gui = ConfigUpdater.load(plugin, RESOURCE_PATH, file, ConfigSchema.GUI);
     }
 
+    /** Moves a renamed spawn's own look (spawns.&lt;name&gt; in gui.yml) to its new name. */
+    public void renameSpawn(String oldName, String newName) {
+        File file = new File(plugin.getDataFolder(), RESOURCE_PATH);
+        if (ConfigUpdater.renameKey(plugin, file, "spawns", oldName, newName)) {
+            load();
+        }
+    }
+
     public void open(Player player) {
         int size = Math.max(1, Math.min(6, gui.getInt("rows", 3))) * 9;
         Holder holder = new Holder();

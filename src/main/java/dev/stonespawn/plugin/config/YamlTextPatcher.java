@@ -56,6 +56,40 @@ final class YamlTextPatcher {
         return null;
     }
 
+    /**
+     * Replaces the key {@code oldKey} below {@code parentPath} (dot separated, "" = top level) with {@code newKey},
+     * leaving every other character of the file as it is. Returns null if the key isn't there.
+     */
+    static String renameKey(String text, String parentPath, String oldKey, String newKey) {
+        try {
+            MappingNode parent = rootMapping(text);
+            if (!parentPath.isEmpty()) {
+                for (String part : parentPath.split("\\.")) {
+                    NodeTuple tuple = find(parent, part);
+                    if (tuple == null || !(tuple.getValueNode() instanceof MappingNode child)) {
+                        return null;
+                    }
+                    parent = child;
+                }
+            }
+            NodeTuple tuple = find(parent, oldKey);
+            if (tuple == null) {
+                return null;
+            }
+            Mark start = tuple.getKeyNode().getStartMark();
+            Mark end = tuple.getKeyNode().getEndMark();
+            if (start.getLine() != end.getLine()) {
+                return null;
+            }
+            List<String> lines = new ArrayList<>(Arrays.asList(text.split("\n", -1)));
+            String line = lines.get(start.getLine());
+            lines.set(start.getLine(), line.substring(0, start.getColumn()) + newKey + line.substring(end.getColumn()));
+            return String.join("\n", lines);
+        } catch (Unpatchable | IndexOutOfBoundsException ex) {
+            return null;
+        }
+    }
+
     /** Finds the first option of the bundled file (parents before children) that the current file lacks. */
     private static Insertion firstMissing(MappingNode defaults, MappingNode current, String path,
                                           Set<String> userSections) throws Unpatchable {

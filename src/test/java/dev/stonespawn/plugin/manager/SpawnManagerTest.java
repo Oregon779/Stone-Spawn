@@ -175,6 +175,71 @@ class SpawnManagerTest extends PluginTestBase {
     }
 
     @Test
+    void renamedMainSpawnSurvivesRestart() {
+        spawnAt(SpawnManager.MAIN_SPAWN, 0.5, 64, 0.5);
+        spawnAt("arena", 9.5, 64, 9.5);
+        plugin.getSpawnManager().renameSpawn("spawn", "lobby");
+        plugin.getSpawnManager().flush();
+
+        SpawnManager fresh = reloadedFromDisk();
+        assertEquals("lobby", fresh.getMainSpawnName());
+        assertEquals(new Location(world, 0.5, 64, 0.5), fresh.getSpawn());
+        assertEquals(List.of("lobby", "arena"), fresh.getSpawnNames());
+    }
+
+    @Test
+    void dataFromBeforeRenamingTreatsSpawnAsMain() throws IOException {
+        Files.writeString(dataFile().toPath(), """
+                spawns:
+                  arena:
+                    world: world
+                    x: 9.5
+                    y: 64.0
+                    z: 9.5
+                    yaw: 0.0
+                    pitch: 0.0
+                  spawn:
+                    world: world
+                    x: 0.5
+                    y: 64.0
+                    z: 0.5
+                    yaw: 0.0
+                    pitch: 0.0
+                """);
+        SpawnManager old = reloadedFromDisk();
+        assertEquals("spawn", old.getMainSpawnName());
+        assertEquals(0.5, old.getSpawn().getX());
+    }
+
+    @Test
+    void deletedMainSpawnIsNotBroughtBackByASpawnCalledSpawn() {
+        spawnAt(SpawnManager.MAIN_SPAWN, 0.5, 64, 0.5);
+        plugin.getSpawnManager().renameSpawn("spawn", "lobby");
+        plugin.getSpawnManager().deleteSpawn("lobby");
+        assertFalse(plugin.getSpawnManager().hasSpawn());
+
+        spawnAt("spawn", 3.5, 64, 3.5);
+        assertEquals("spawn", plugin.getSpawnManager().getMainSpawnName(),
+                "\"/setspawn spawn\" still sets the main spawn while there is none");
+
+        plugin.getSpawnManager().renameSpawn("spawn", "other");
+        plugin.getSpawnManager().deleteSpawn("other");
+        spawnAt("arena", 1.5, 64, 1.5);
+        plugin.getSpawnManager().flush();
+        assertFalse(reloadedFromDisk().hasSpawn());
+    }
+
+    @Test
+    void renameRefusesUnknownAndTakenNames() {
+        spawnAt("hub", 1, 64, 1);
+        spawnAt("arena", 2, 64, 2);
+        assertEquals(SpawnManager.RenameResult.NOT_FOUND, plugin.getSpawnManager().renameSpawn("nowhere", "x"));
+        assertEquals(SpawnManager.RenameResult.NAME_TAKEN, plugin.getSpawnManager().renameSpawn("hub", "ARENA"));
+        assertEquals(SpawnManager.RenameResult.NAME_TAKEN, plugin.getSpawnManager().renameSpawn("hub", "hub"));
+        assertEquals(List.of("arena", "hub"), plugin.getSpawnManager().getSpawnNames());
+    }
+
+    @Test
     void noTempFileLeftBehind() {
         spawnAt("hub", 1, 64, 1);
         plugin.getSpawnManager().flush();

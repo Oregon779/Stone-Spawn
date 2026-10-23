@@ -125,6 +125,7 @@ Base command: `/stonespawn` (aliases: `/sp`, `/ss`)
 | `/setspawn` | Set the **main spawn** to your current location | `stonespawn.admin` |
 | `/setspawn <name>` | Set an additional, **named spawn** (or move it, if it already exists) | `stonespawn.admin` |
 | `/delspawn <name>` | Delete a spawn | `stonespawn.admin` |
+| `/renamespawn <name> <new name>` | Rename a spawn - the main spawn stays the main spawn | `stonespawn.admin` |
 | `/spawn` | Teleport to the main spawn - or open the **selection GUI** if more than one spawn exists | `stonespawn.use` |
 | `/spawn <spawn>` | Teleport to a named spawn | `stonespawn.use` |
 | `/spawn <player>` | Teleport another player to the main spawn | `stonespawn.admin` |
@@ -142,7 +143,7 @@ Base command: `/stonespawn` (aliases: `/sp`, `/ss`)
 
 - `/setspawn` centers the spawn on the middle of the block and keeps the direction you are looking in.
 - Spawn names may contain `a-z`, `0-9`, `_` and `-`, up to 32 characters. Names are not case-sensitive and are stored in lowercase.
-- The main spawn is simply the spawn called `spawn`, so `/setspawn` and `/setspawn spawn` do the same.
+- The main spawn is called `spawn` when it is created, so `/setspawn` and `/setspawn spawn` do the same. After renaming it (e.g. `/renamespawn spawn lobby`) it is still the main spawn, `/setspawn` moves it, and players reach it with `/spawn lobby`.
 - If a spawn and an online player have the same name, `/spawn <name>` means the spawn. Use `/spawn <spawn> <player>` to be explicit.
 - The console can use `/spawn <player>`, `/spawn <spawn> <player>`, `/delspawn` and `/stonespawn`, but not `/setspawn` (it needs a position).
 - Commands a player can't use are hidden from tab-completion. `/stonespawn` stays visible, because `help` only lists what you may use.
@@ -156,7 +157,8 @@ Base command: `/stonespawn` (aliases: `/sp`, `/ss`)
 /spawn nether_hub
 /spawn Notch
 /spawn nether_hub Notch
-/delspawn nether_hub
+/renamespawn nether_hub nether
+/delspawn nether
 /stonespawn reload
 ```
 
@@ -167,7 +169,7 @@ Base command: `/stonespawn` (aliases: `/sp`, `/ss`)
 | Permission | Description | Default |
 |---|---|---|
 | `stonespawn.use` | Teleport yourself with `/spawn`, `/spawn <name>` or the GUI | everyone |
-| `stonespawn.admin` | All admin actions: set/delete spawns, teleport other players, reload, checkupdate, update notifications | OP |
+| `stonespawn.admin` | All admin actions: set/rename/delete spawns, teleport other players, reload, checkupdate, update notifications | OP |
 | `stonespawn.bypass` | Skips both the cooldown and the countdown (grants the two permissions below) | OP |
 | `stonespawn.bypass.cooldown` | Skips only the `/spawn` cooldown | OP |
 | `stonespawn.bypass.delay` | Skips only the countdown - the teleport happens immediately | OP |
@@ -220,6 +222,7 @@ All automatic teleports go to the **main spawn** and happen instantly (no countd
 
 - `/setspawn` sets the **main spawn**. It is used by `/spawn` (with one spawn or with the GUI switched off) and by all [automatic teleports](#automatic-teleports).
 - `/setspawn <name>` adds more spawns. Setting an existing name moves that spawn.
+- `/renamespawn <name> <new name>` renames a spawn. Its location stays the same, and its own look in `gui.yml` (`spawns.<name>`) moves to the new name - the rest of `gui.yml` is not touched. Renaming the main spawn keeps it the main spawn, so all automatic teleports keep working.
 - Players reach named spawns with `/spawn <name>` or the [selection GUI](#spawn-selection-gui).
 - `/delspawn <name>` deletes a spawn. The main spawn can be deleted as well - automatic teleports then stop until a new main spawn is set.
 - Every spawn gets its own particle ring (the spawn marker, see [Effects and Notifications](#effects-and-notifications)).
@@ -473,7 +476,7 @@ All files are in `plugins/StoneSpawn/`. After changes, run `/stonespawn reload`.
 
 ## Data Storage and Safety
 
-`data.yml` stores all spawn points and the list of players who have joined before (for `FIRST_JOIN`). Don't edit it while the server is running.
+`data.yml` stores all spawn points, which of them is the main spawn (`main-spawn`) and the list of players who have joined before (for `FIRST_JOIN`). Don't edit it while the server is running.
 
 - Spawn changes are saved immediately in the background. First joins are collected and saved together a few seconds later, so a rush of new players doesn't cause lag.
 - Everything that is still pending is saved when the server stops.
@@ -525,7 +528,7 @@ Your file is safe: StoneSpawn never overwrites a file it can't read. The console
 There is more than one spawn. Set `command.spawn-gui: false` to always go to the main spawn, or delete spawns you don't need with `/delspawn`.
 
 **How do I rename a spawn?**
-Stand at the spawn, set it with the new name (`/setspawn newname`) and delete the old one (`/delspawn oldname`).
+`/renamespawn oldname newname`. The location and the spawn's own look in `gui.yml` are kept, and the main spawn stays the main spawn.
 
 **Why doesn't dying or falling into the void teleport me to spawn?**
 Both are off by default. Set `spawn.death.enabled: true` and/or `spawn.void.enabled: true`.
