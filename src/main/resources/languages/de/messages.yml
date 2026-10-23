@@ -66,6 +66,7 @@ help:
   renamespawn: "&b/renamespawn <Name> <neuer Name> &8» &7Benennt einen Spawn um"
   reload: "&b/stonespawn reload &8» &7Lädt Konfiguration und Nachrichten neu"
   checkupdate: "&b/stonespawn checkupdate &8» &7Prüft sofort auf Modrinth nach einer neuen Version"
+  intro: "&b/stonespawn intro &8» &7Intro für neue Spieler einrichten und testen"
   help: "&b/stonespawn help &8» &7Zeigt dieses Hilfe-Menü an"
 
 update:
@@ -90,3 +91,27 @@ elytra:
     swap-hand: "Hand wechseln"
     sneak: "Schleichen"
     left-click: "Angreifen"
+
+intro:
+  # Wird während des Intros in der Actionbar angezeigt, wenn es übersprungen werden kann.
+  skip-hint: "&7Drücke &fShift&7, um das Intro zu überspringen"
+  usage: "&c✖ Benutzung: &f/stonespawn intro <play [Spieler]|addpoint <Name>|removepoint <Name>|list>"
+  # {player}
+  playing: "&a✔ Das Intro wird für &b{player} &aabgespielt."
+  # {player}
+  already-playing: "&c✖ &f{player} &csieht das Intro bereits."
+  no-points: "&c✖ Das Intro hat noch keine Kamerapunkte. Füge einen mit &f/stonespawn intro addpoint <Name> &chinzu."
+  # {point}
+  point-added: "&a✔ Kamerapunkt &b{point} &aan deiner Position und Blickrichtung hinzugefügt."
+  # {point}
+  point-moved: "&a✔ Kamerapunkt &b{point} &aan deine Position und Blickrichtung verschoben."
+  # {point}
+  point-removed: "&a✔ Kamerapunkt &b{point} &aentfernt."
+  # {point}
+  point-not-found: "&c✖ Es gibt keinen Kamerapunkt namens &f{point}&c."
+  # {point}
+  invalid-name: "&c✖ &f{point} &cist kein gültiger Name. Erlaubt sind a-z, 0-9, _ und - (max. 32 Zeichen)."
+  list-header: "&7Kamerapunkte des Intros, in Reihenfolge:"
+  # {number} {point} {world} {x} {y} {z}
+  list-entry: "&8{number}. &b{point} &7- {world} {x}, {y}, {z}"
+  list-empty: "&7Das Intro hat noch keine Kamerapunkte."

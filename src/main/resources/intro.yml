@@ -1,0 +1,79 @@
+# =====================================================================
+#                          StoneSpawn - intro.yml
+#                        A plugin by Stone Plugins
+# =====================================================================
+#
+# A short intro for players who join the server for the very first time:
+# the camera flies from point to point, every point shows its own title,
+# chat lines and sound, and at the end the player is back where the intro
+# started (the main spawn, if spawn.join.mode in config.yml sends new
+# players there) and the book below opens.
+#
+# Set the camera points in-game. Stand where the camera should be and
+# look where it should look, then use:
+#   /stonespawn intro addpoint <name>     add a point (or move it there)
+#   /stonespawn intro removepoint <name>  remove a point
+#   /stonespawn intro list                show all points in order
+#   /stonespawn intro play [player]       watch the intro or show it
+# After changing this file by hand, run /stonespawn reload.
+#
+# Texts support &-codes, hex colors (&#FF00AA), MiniMessage and the
+# placeholder {player}.
+# Bedrock players can't follow a flying camera, so they jump from point
+# to point instead and see the same texts.
+#
+# Missing options are added automatically on plugin updates. Existing
+# values you changed are never overwritten, and your points are never
+# touched.
+# =====================================================================
+
+# Play the intro for players who join the server for the very first time.
+enabled: false
+
+# Players can end the intro early by pressing Shift (sneak). They are
+# still brought back and get the book.
+skippable: true
+
+# Ticks to wait after joining before the intro starts, so the world has
+# finished loading for the player (20 ticks = 1 second).
+start-delay-ticks: 40
+
+# Default timing of every point, in seconds. Each point can override both.
+#   fly-seconds:  how long the camera flies from the previous point to it
+#   stay-seconds: how long the camera stays there while its texts show
+fly-seconds: 4.0
+stay-seconds: 3.0
+
+# The camera points, in this order. "/stonespawn intro addpoint" fills in
+# world, x, y, z, yaw and pitch - add the texts yourself. Every point
+# can have:
+#   title, subtitle             shown when the camera arrives
+#   chat                        lines sent to the chat at that moment
+#   sound                       e.g. ENTITY_PLAYER_LEVELUP
+#   sound-volume, sound-pitch
+#   fly-seconds, stay-seconds   see above
+# Example:
+#   points:
+#     welcome:
+#       world: world
+#       x: 0.5
+#       y: 90.0
+#       z: 0.5
+#       yaw: 0.0
+#       pitch: 20.0
+#       title: "&b&lWelcome, {player}!"
+#       subtitle: "&7to our server"
+#       chat:
+#         - "&7This is where every adventure starts."
+#       sound: ENTITY_PLAYER_LEVELUP
+points: {}
+
+# A book that opens when the intro ends. Every entry of "pages" is one
+# page; inside double quotes, \n starts a new line.
+book:
+  enabled: true
+  title: "Welcome"
+  author: "The server team"
+  pages:
+    - "&lWelcome, {player}!\n\n&rHave fun on our server! The rules are on the next page."
+    - "&lRules\n\n&r1. Be nice to each other\n2. No griefing\n3. No cheating"

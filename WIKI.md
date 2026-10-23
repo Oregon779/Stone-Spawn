@@ -18,14 +18,15 @@ A configurable spawn plugin for Paper servers, by **Stone Plugins**.
 8. [Multiple Spawns](#multiple-spawns)
 9. [Spawn Selection GUI](#spawn-selection-gui)
 10. [Elytra Glide](#elytra-glide)
-11. [Effects and Notifications](#effects-and-notifications)
-12. [Configuration Reference](#configuration-reference)
-13. [Messages and Languages](#messages-and-languages)
-14. [Data Storage and Safety](#data-storage-and-safety)
-15. [Update Checker](#update-checker)
-16. [Performance Tips for Large Servers](#performance-tips-for-large-servers)
-17. [FAQ and Troubleshooting](#faq-and-troubleshooting)
-18. [Building from Source](#building-from-source)
+11. [First-Join Intro](#first-join-intro)
+12. [Effects and Notifications](#effects-and-notifications)
+13. [Configuration Reference](#configuration-reference)
+14. [Messages and Languages](#messages-and-languages)
+15. [Data Storage and Safety](#data-storage-and-safety)
+16. [Update Checker](#update-checker)
+17. [Performance Tips for Large Servers](#performance-tips-for-large-servers)
+18. [FAQ and Troubleshooting](#faq-and-troubleshooting)
+19. [Building from Source](#building-from-source)
 
 ---
 
@@ -34,7 +35,8 @@ A configurable spawn plugin for Paper servers, by **Stone Plugins**.
 StoneSpawn lets you:
 
 - set the spawn point with one command (centered on the block you're standing on)
-- create **several named spawns** and let players pick one with `/spawn <name>` or a **fully customizable selection GUI**
+- create **several named spawns**, rename them, and let players pick one with `/spawn <name>` or a **fully customizable selection GUI**
+- welcome new players with a **first-join intro**: a camera flight over your spawn with titles, chat lines and sounds, followed by a book with your rules
 - teleport yourself, or another player, to a spawn with `/spawn`
 - run a **teleport countdown** with a colored particle spiral and a sound that rises in pitch, cancelled when the player moves
 - automatically teleport players to spawn **on join** (always, first join only, or never), **on death**, **when falling into the void** or **on world change**
@@ -89,12 +91,12 @@ Updating is a file swap:
 3. Put the new jar in.
 4. Start the server.
 
-Your settings are kept. On every start and on `/stonespawn reload`, StoneSpawn brings `config.yml`, `gui.yml` and every bundled `messages.yml` up to date **before** it reads them:
+Your settings are kept. On every start and on `/stonespawn reload`, StoneSpawn brings `config.yml`, `gui.yml`, `intro.yml` and every bundled `messages.yml` up to date **before** it reads them:
 
 - **New options are added** with their default value and their explanation comments, at the same place where they are in a fresh file (e.g. a new option in `elytra.boost` lands inside `elytra.boost`, next to its neighbours).
 - **Your values are never overwritten or reset**, also not in nested sections. Options you deleted on purpose come back with their default, because the plugin needs a value for them.
 - **The rest of the file is not touched.** Your own comments, quotes, blank lines and list style stay exactly as you wrote them; only the new lines are inserted. (Only if a new option has to go into a section you wrote in one line, like `boost: {enabled: true}`, the file is saved in the standard layout instead - values and comments are kept.)
-- **Your own entries in `gui.yml`** (`spawns` and `items`) are never changed or extended.
+- **Your own entries** - `spawns` and `items` in `gui.yml`, the camera `points` in `intro.yml` - are never changed or extended.
 - **Renamed or moved options** are carried over: `config.yml` ends with `config-version`, and when a new version renames an option, your value is moved to the new name automatically. Before that, the old file is saved next to it as `config.yml.v<old version>-<timestamp>.bak`.
 
 Nothing is ever written to a file that can't be read safely:
@@ -137,6 +139,10 @@ Base command: `/stonespawn` (aliases: `/sp`, `/ss`)
 |---|---|---|
 | `/stonespawn reload` | Reloads `config.yml`, `gui.yml`, all `messages.yml` files and the update checker settings, and restarts the spawn markers | `stonespawn.admin` |
 | `/stonespawn checkupdate` | Checks Modrinth for a new version right now | `stonespawn.admin` |
+| `/stonespawn intro addpoint <name>` | Adds a camera point for the [first-join intro](#first-join-intro) at your eyes and view, or moves an existing one there | `stonespawn.admin` |
+| `/stonespawn intro removepoint <name>` | Removes a camera point | `stonespawn.admin` |
+| `/stonespawn intro list` | Lists the camera points in the order the camera visits them | `stonespawn.admin` |
+| `/stonespawn intro play [player]` | Plays the intro for you or another player (also while it is switched off, for testing) | `stonespawn.admin` |
 | `/stonespawn help` | Shows the commands you are allowed to use | everyone |
 
 **Good to know**
@@ -169,7 +175,7 @@ Base command: `/stonespawn` (aliases: `/sp`, `/ss`)
 | Permission | Description | Default |
 |---|---|---|
 | `stonespawn.use` | Teleport yourself with `/spawn`, `/spawn <name>` or the GUI | everyone |
-| `stonespawn.admin` | All admin actions: set/rename/delete spawns, teleport other players, reload, checkupdate, update notifications | OP |
+| `stonespawn.admin` | All admin actions: set/rename/delete spawns, set up the intro, teleport other players, reload, checkupdate, update notifications | OP |
 | `stonespawn.bypass` | Skips both the cooldown and the countdown (grants the two permissions below) | OP |
 | `stonespawn.bypass.cooldown` | Skips only the `/spawn` cooldown | OP |
 | `stonespawn.bypass.delay` | Skips only the countdown - the teleport happens immediately | OP |
@@ -357,7 +363,73 @@ Bedrock players are recognized through the Floodgate or Geyser API if one of the
 
 ---
 
+## First-Join Intro
+
+Players who join the server for the **very first time** can get a short intro: the camera flies over your spawn from point to point, every point shows its own title, chat lines and sound, and at the end the player is back where the intro started and a **book** with your welcome text or rules opens. Everything is set up in `intro.yml`. The intro is **off by default** (`enabled: false`).
+
+**Setting it up**
+
+1. Fly to where the camera should be and look where it should look.
+2. `/stonespawn intro addpoint <name>` - the camera point is saved at your eyes, with your view. Repeat for every point; the camera visits them in this order. Using an existing name moves that point (its texts stay).
+3. Add the texts for each point in `intro.yml` (see below) and run `/stonespawn reload`.
+4. Watch it with `/stonespawn intro play`, then set `enabled: true`.
+
+```yaml
+enabled: true
+skippable: true          # Shift ends the intro early (the player still gets the book)
+start-delay-ticks: 40    # wait after joining, so the world has loaded (20 ticks = 1 second)
+fly-seconds: 4.0         # default flight time from one point to the next
+stay-seconds: 3.0        # default time the camera stays at a point
+
+points:
+  welcome:               # world, x, y, z, yaw, pitch come from /stonespawn intro addpoint
+    world: world
+    x: 0.5
+    y: 90.0
+    z: 0.5
+    yaw: 0.0
+    pitch: 20.0
+    title: "&b&lWelcome, {player}!"
+    subtitle: "&7to our server"
+    chat:
+      - "&7This is where every adventure starts."
+    sound: ENTITY_PLAYER_LEVELUP
+    sound-volume: 1.0
+    sound-pitch: 1.0
+    stay-seconds: 5.0    # optional, overrides the default for this point
+
+book:
+  enabled: true
+  title: "Welcome"
+  author: "The server team"
+  pages:                 # one entry per page; inside double quotes \n starts a new line
+    - "&lWelcome, {player}!\n\n&rHave fun on our server!"
+```
+
+Texts support `&` codes, hex colors, MiniMessage and the placeholder `{player}`.
+
+**How it plays**
+
+- It starts `start-delay-ticks` after the first join, and only after the first-join teleport (see `spawn.join.mode`) has arrived. With `FIRST_JOIN` or `ALWAYS`, the intro therefore starts and ends at the main spawn; with `NEVER`, where the player joined.
+- During the intro the player is in spectator mode, invisible to others and can't be hurt. Their game mode is given back at the end.
+- The camera stays still at each point while its texts show, then glides smoothly to the next one. Points in another world are reached with a cut instead of a flight.
+- **Bedrock players** (Geyser/Floodgate) can't follow a flying camera, so they jump from point to point instead and see the same texts.
+- Only players who are **new to the server** get it - players who already played before StoneSpawn was installed don't.
+- Without camera points, new players only get the book.
+
+**Safety**
+
+- Logging out or a server stop never leaves a player in spectator mode: they are brought back right away. If the server crashes mid-intro, this happens on their next join. `/stonespawn reload` doesn't interrupt a running intro.
+- If another plugin or an admin teleports the player or changes their game mode during the intro, the intro ends and that teleport or game mode wins.
+- The camera is an invisible entity that is never saved with the world.
+
+`/stonespawn intro addpoint` and `removepoint` only change the lines of that point in `intro.yml` - your texts, comments and formatting stay as they are.
+
+---
+
 ## Effects and Notifications
+
+All countdown and arrival effects are **personal**: only the player who is teleporting sees the particles and hears the sounds - players standing next to them or waiting at the spawn don't. Visible to everyone nearby are only the particle ring at every spawn (the spawn marker) and the elytra boost.
 
 **Where texts are shown**
 
@@ -438,6 +510,7 @@ All files are in `plugins/StoneSpawn/`. After changes, run `/stonespawn reload`.
 **Other files**
 
 - `gui.yml` - see [Spawn Selection GUI](#spawn-selection-gui).
+- `intro.yml` - see [First-Join Intro](#first-join-intro).
 - `languages/<language>/messages.yml` - see [Messages and Languages](#messages-and-languages).
 - `data.yml` - see [Data Storage and Safety](#data-storage-and-safety). Not meant to be edited.
 
@@ -577,6 +650,12 @@ See [Data Storage and Safety](#data-storage-and-safety) - your data was kept as 
 
 **How do I translate the plugin?**
 See [Messages and Languages](#messages-and-languages). The countdown/arrival texts in `config.yml` are shared by all languages.
+
+**Other players see or hear my teleport effects.**
+They can't: the countdown spiral, the tick sound and the arrival effect are sent to the teleporting player only. What others see is the particle ring that is always at the spawn, or an elytra boost. When testing with two accounts on one computer, both game windows play their sounds through the same speakers. If something else shows up, another plugin is adding its own teleport effects.
+
+**New players don't get the intro.**
+Check `enabled: true` in `intro.yml` and that it has camera points (`/stonespawn intro list`). The intro is only for players who are new to the server; test it with `/stonespawn intro play`.
 
 **Does this work on Spigot?**
 No. StoneSpawn uses Paper features (titles, boss bars, MiniMessage text, background teleports).

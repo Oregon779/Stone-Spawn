@@ -14,6 +14,9 @@ public class TestPlayer extends PlayerMock {
 
     private boolean grounded = true;
     private final java.util.List<Particle> receivedParticles = new java.util.ArrayList<>();
+    private final java.util.List<net.kyori.adventure.title.Title> shownTitles = new java.util.ArrayList<>();
+    private final java.util.List<net.kyori.adventure.inventory.Book> openedBooks = new java.util.ArrayList<>();
+    private boolean playedBefore;
 
     public TestPlayer(ServerMock server, String name) {
         super(server, name);
@@ -54,5 +57,32 @@ public class TestPlayer extends PlayerMock {
     /** Particles sent to this player only (Player#spawnParticle), like a real client would receive them. */
     public java.util.List<Particle> receivedParticles() {
         return receivedParticles;
+    }
+
+    @Override
+    public void showTitle(net.kyori.adventure.title.Title title) {
+        shownTitles.add(title);
+    }
+
+    public java.util.List<net.kyori.adventure.title.Title> shownTitles() {
+        return shownTitles;
+    }
+
+    @Override
+    public void openBook(net.kyori.adventure.inventory.Book book) {
+        openedBooks.add(book);
+    }
+
+    public java.util.List<net.kyori.adventure.inventory.Book> openedBooks() {
+        return openedBooks;
+    }
+
+    @Override
+    public boolean hasPlayedBefore() {
+        return playedBefore;
+    }
+
+    public void setPlayedBefore(boolean playedBefore) {
+        this.playedBefore = playedBefore;
     }
 }

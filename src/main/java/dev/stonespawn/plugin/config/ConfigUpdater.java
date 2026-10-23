@@ -16,6 +16,8 @@ import java.nio.file.Path;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.function.Predicate;
+import java.util.function.UnaryOperator;
 import java.util.logging.Logger;
 
 import static dev.stonespawn.plugin.config.ConfigSchema.VERSION_KEY;
@@ -164,24 +166,59 @@ public final class ConfigUpdater {
     public static boolean renameKey(JavaPlugin plugin, File file, String parentPath, String oldKey, String newKey) {
         String path = parentPath.isEmpty() ? oldKey : parentPath + "." + oldKey;
         String newPath = parentPath.isEmpty() ? newKey : parentPath + "." + newKey;
+        return edit(plugin, file, "rename " + path, config -> {
+            if (!config.contains(path, true) || config.contains(newPath, true)) {
+                return false;
+            }
+            copy(config, path, config, newPath);
+            config.set(path, null);
+            return true;
+        }, text -> YamlTextPatcher.renameKey(text, parentPath, oldKey, newKey));
+    }
+
+    /**
+     * Sets plain values in a section of a YAML file the server owner edits (e.g. a camera point in intro.yml), creating
+     * the section if needed. Only the affected lines change; comments and formatting stay as they are.
+     */
+    public static boolean setValues(JavaPlugin plugin, File file, String sectionPath, Map<String, Object> values) {
+        return edit(plugin, file, "update " + sectionPath, config -> {
+            values.forEach((key, value) -> config.set(sectionPath + "." + key, value));
+            return true;
+        }, text -> YamlTextPatcher.setValues(text, sectionPath, values));
+    }
+
+    /** Removes an option or section from a YAML file the server owner edits; the rest stays as written. */
+    public static boolean removeKey(JavaPlugin plugin, File file, String path) {
+        return edit(plugin, file, "remove " + path, config -> {
+            if (!config.contains(path, true)) {
+                return false;
+            }
+            config.set(path, null);
+            return true;
+        }, text -> YamlTextPatcher.removeKey(text, path));
+    }
+
+    /**
+     * Applies a change to a file: {@code change} does it through Bukkit (returning false if there is nothing to do),
+     * {@code textChange} does the same on the text. The text version is written if it reads exactly like the Bukkit
+     * version, so the file keeps its layout; otherwise the Bukkit version is written.
+     */
+    private static boolean edit(JavaPlugin plugin, File file, String what, Predicate<YamlConfiguration> change,
+                                UnaryOperator<String> textChange) {
         try {
             String text = Files.readString(file.toPath());
             YamlConfiguration expected = parse(text);
-            if (!expected.contains(path, true) || expected.contains(newPath, true)) {
+            if (!change.test(expected)) {
                 return false;
             }
-            copy(expected, path, expected, newPath);
-            expected.set(path, null);
-
-            String renamed = YamlTextPatcher.renameKey(text, parentPath, oldKey, newKey);
-            if (renamed == null || readsAs(renamed, expected) == null) {
-                renamed = expected.saveToString();
+            String edited = textChange.apply(text);
+            if (edited == null || readsAs(edited, expected) == null) {
+                edited = expected.saveToString();
             }
-            AtomicFiles.writeString(file.toPath(), renamed);
+            AtomicFiles.writeString(file.toPath(), edited);
             return true;
         } catch (IOException | InvalidConfigurationException ex) {
-            plugin.getLogger().warning("Could not rename " + path + " to " + newPath + " in " + file.getName() + ": "
-                    + ex.getMessage());
+            plugin.getLogger().warning("Could not " + what + " in " + file.getName() + ": " + ex.getMessage());
             return false;
         }
     }

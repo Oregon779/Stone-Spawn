@@ -15,6 +15,7 @@ import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -62,32 +63,164 @@ final class YamlTextPatcher {
      */
     static String renameKey(String text, String parentPath, String oldKey, String newKey) {
         try {
-            MappingNode parent = rootMapping(text);
-            if (!parentPath.isEmpty()) {
-                for (String part : parentPath.split("\\.")) {
-                    NodeTuple tuple = find(parent, part);
-                    if (tuple == null || !(tuple.getValueNode() instanceof MappingNode child)) {
-                        return null;
-                    }
-                    parent = child;
-                }
-            }
-            NodeTuple tuple = find(parent, oldKey);
+            NodeTuple tuple = find(section(rootMapping(text), parentPath).mapping(), oldKey);
             if (tuple == null) {
                 return null;
             }
-            Mark start = tuple.getKeyNode().getStartMark();
-            Mark end = tuple.getKeyNode().getEndMark();
-            if (start.getLine() != end.getLine()) {
-                return null;
-            }
             List<String> lines = new ArrayList<>(Arrays.asList(text.split("\n", -1)));
-            String line = lines.get(start.getLine());
-            lines.set(start.getLine(), line.substring(0, start.getColumn()) + newKey + line.substring(end.getColumn()));
+            replace(lines, tuple.getKeyNode().getStartMark(), tuple.getKeyNode().getEndMark(), newKey);
             return String.join("\n", lines);
         } catch (Unpatchable | IndexOutOfBoundsException ex) {
             return null;
         }
+    }
+
+    /**
+     * Sets plain values (numbers, booleans, texts) in the section {@code sectionPath}, e.g. "points.welcome". A missing
+     * section is added at the end of its parent, an empty parent like "points: {}" is opened up for it. Existing
+     * values are replaced in place. Returns null if the layout doesn't allow a line-by-line change.
+     */
+    static String setValues(String text, String sectionPath, Map<String, Object> values) {
+        String newline = text.contains("\r\n") ? "\r\n" : "\n";
+        List<String> lines = new ArrayList<>(Arrays.asList(text.split("\r?\n", -1)));
+        int dot = sectionPath.lastIndexOf('.');
+        String parentPath = dot < 0 ? "" : sectionPath.substring(0, dot);
+        String name = sectionPath.substring(dot + 1);
+        try {
+            for (Map.Entry<String, Object> entry : values.entrySet()) {
+                Section parent = section(rootMapping(String.join("\n", lines)), parentPath);
+                NodeTuple target = find(parent.mapping(), name);
+                if (target == null) {
+                    insertSection(lines, parent, name, values);
+                    break;
+                }
+                if (!(target.getValueNode() instanceof MappingNode mapping)
+                        || mapping.getFlowStyle() == DumperOptions.FlowStyle.FLOW || mapping.getValue().isEmpty()) {
+                    throw new Unpatchable();
+                }
+                NodeTuple option = find(mapping, entry.getKey());
+                String rendered = scalar(entry.getValue());
+                if (option == null) {
+                    int indent = mapping.getValue().getFirst().getKeyNode().getStartMark().getColumn();
+                    lines.add(contentEnd(lines, mapping.getValue().getLast()) + 1,
+                            " ".repeat(indent) + entry.getKey() + ": " + rendered);
+                } else if (option.getValueNode() instanceof ScalarNode value && !value.getValue().isEmpty()) {
+                    replace(lines, value.getStartMark(), value.getEndMark(), rendered);
+                } else {
+                    throw new Unpatchable();
+                }
+            }
+            return String.join(newline, lines);
+        } catch (Unpatchable | IndexOutOfBoundsException ex) {
+            return null;
+        }
+    }
+
+    /**
+     * Removes the option or section at {@code path} (its own comments above it stay). A section left without entries
+     * is written as "{}", so it stays an empty section. Returns null if that isn't possible line by line.
+     */
+    static String removeKey(String text, String path) {
+        String newline = text.contains("\r\n") ? "\r\n" : "\n";
+        List<String> lines = new ArrayList<>(Arrays.asList(text.split("\r?\n", -1)));
+        int dot = path.lastIndexOf('.');
+        try {
+            Section parent = section(rootMapping(text), dot < 0 ? "" : path.substring(0, dot));
+            NodeTuple tuple = find(parent.mapping(), path.substring(dot + 1));
+            if (tuple == null || parent.mapping().getFlowStyle() == DumperOptions.FlowStyle.FLOW) {
+                return null;
+            }
+            int from = keyLine(tuple);
+            int to = contentEnd(lines, tuple);
+            if (parent.mapping().getValue().size() == 1) {
+                if (parent.tuple() == null) {
+                    return null;
+                }
+                Mark keyEnd = parent.tuple().getKeyNode().getEndMark();
+                String keyLine = lines.get(keyEnd.getLine());
+                int colon = keyLine.indexOf(':', keyEnd.getColumn());
+                if (colon < 0) {
+                    return null;
+                }
+                lines.set(keyEnd.getLine(), keyLine.substring(0, colon + 1) + " {}" + keyLine.substring(colon + 1));
+            }
+            lines.subList(from, to + 1).clear();
+            return String.join(newline, lines);
+        } catch (Unpatchable | IndexOutOfBoundsException ex) {
+            return null;
+        }
+    }
+
+    /** A mapping in the file together with the key that holds it ({@code tuple} is null for the top level). */
+    private record Section(NodeTuple tuple, MappingNode mapping) {
+    }
+
+    private static Section section(MappingNode root, String path) throws Unpatchable {
+        Section current = new Section(null, root);
+        if (path.isEmpty()) {
+            return current;
+        }
+        for (String part : path.split("\\.")) {
+            NodeTuple tuple = find(current.mapping(), part);
+            if (tuple == null || !(tuple.getValueNode() instanceof MappingNode child)) {
+                throw new Unpatchable();
+            }
+            current = new Section(tuple, child);
+        }
+        return current;
+    }
+
+    private static void insertSection(List<String> lines, Section parent, String name, Map<String, Object> values)
+            throws Unpatchable {
+        MappingNode mapping = parent.mapping();
+        int indent;
+        int at;
+        int step = 2;
+        if (mapping.getFlowStyle() == DumperOptions.FlowStyle.FLOW) {
+            if (!mapping.getValue().isEmpty() || parent.tuple() == null
+                    || mapping.getStartMark().getLine() != mapping.getEndMark().getLine()) {
+                throw new Unpatchable();
+            }
+            // "points: {}" becomes "points:" with the new entry below it.
+            int line = mapping.getStartMark().getLine();
+            String text = lines.get(line);
+            lines.set(line, text.substring(0, mapping.getStartMark().getColumn()).stripTrailing()
+                    + text.substring(mapping.getEndMark().getColumn()));
+            indent = parent.tuple().getKeyNode().getStartMark().getColumn() + 2;
+            at = line + 1;
+        } else {
+            if (mapping.getValue().isEmpty()) {
+                throw new Unpatchable();
+            }
+            NodeTuple sibling = mapping.getValue().getFirst();
+            indent = sibling.getKeyNode().getStartMark().getColumn();
+            at = contentEnd(lines, mapping.getValue().getLast()) + 1;
+            // Indent the values like the entries next to it do.
+            if (sibling.getValueNode() instanceof MappingNode siblingValues && !siblingValues.getValue().isEmpty()
+                    && siblingValues.getFlowStyle() != DumperOptions.FlowStyle.FLOW) {
+                step = siblingValues.getValue().getFirst().getKeyNode().getStartMark().getColumn() - indent;
+            }
+        }
+        int valueIndent = indent + step;
+        List<String> block = new ArrayList<>();
+        block.add(" ".repeat(indent) + name + ":");
+        values.forEach((key, value) -> block.add(" ".repeat(valueIndent) + key + ": " + scalar(value)));
+        lines.addAll(at, block);
+    }
+
+    private static void replace(List<String> lines, Mark start, Mark end, String replacement) throws Unpatchable {
+        if (start.getLine() != end.getLine()) {
+            throw new Unpatchable();
+        }
+        String line = lines.get(start.getLine());
+        lines.set(start.getLine(), line.substring(0, start.getColumn()) + replacement + line.substring(end.getColumn()));
+    }
+
+    private static String scalar(Object value) {
+        if (value instanceof Number || value instanceof Boolean) {
+            return String.valueOf(value);
+        }
+        return "\"" + String.valueOf(value).replace("\\", "\\\\").replace("\"", "\\\"") + "\"";
     }
 
     /** Finds the first option of the bundled file (parents before children) that the current file lacks. */

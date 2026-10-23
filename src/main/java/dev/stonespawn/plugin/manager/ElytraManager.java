@@ -26,12 +26,13 @@ public class ElytraManager {
     private final Set<UUID> onSpawnIsland = new HashSet<>();
     private final Map<UUID, Integer> boostsUsedByGlider = new HashMap<>();
     private final Map<UUID, Long> damageGraceUntil = new HashMap<>();
-    private final BedrockDetector bedrock = new BedrockDetector();
+    private final BedrockDetector bedrock;
     private final TemporaryElytra temporaryElytra;
 
     public ElytraManager(StoneSpawn plugin) {
         this.plugin = plugin;
         this.temporaryElytra = new TemporaryElytra(plugin);
+        this.bedrock = plugin.getBedrockDetector();
     }
 
     public boolean isGliding(UUID uuid) {

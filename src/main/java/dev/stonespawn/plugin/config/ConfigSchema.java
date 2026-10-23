@@ -30,6 +30,8 @@ public record ConfigSchema(List<ConfigMigration> migrations, Set<String> userSec
 
     public static final ConfigSchema MESSAGES = new ConfigSchema(List.of(), Set.of());
 
+    public static final ConfigSchema INTRO = new ConfigSchema(List.of(), Set.of("points"));
+
     public ConfigSchema {
         migrations = List.copyOf(migrations);
         userSections = Set.copyOf(userSections);
